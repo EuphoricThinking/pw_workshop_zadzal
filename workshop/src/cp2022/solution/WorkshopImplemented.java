@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 
 public class WorkshopImplemented implements Workshop {
     // Number of available entries
@@ -23,12 +24,27 @@ public class WorkshopImplemented implements Workshop {
     // Actual workplace a given thread is seated at: <ThreadId, WorkplaceId>
     private final ConcurrentHashMap<Long, WorkplaceId> previousWorkplace = new ConcurrentHashMap<>();
 
-    /* SYnchronization of the counter of possible number of entries to satisfy 2*N rule */
-    
+    // Indicates whether the user can seat at the given workplace
+    private final HashMap<WorkplaceId, Boolean> isAvailableToSeatAt = new HashMap<>();
+    // Idicates whether the user can start using (call use()) at the given workplace
+    private final HashMap<WorkplaceId, Boolean> isAvailableToUse = new HashMap<>();
+
+    /* Synchronization of the counter of possible number of entries to satisfy 2*N rule */
+    private Semaphore mutexEntryCounter = new Semaphore(1);
+    private long howManyWaitForEntry = 0;
+    private Semaphore waitForEntry = new Semaphore(0, true); // FIFO semaphore
+
+    /* Synchronization of the access to workplace data */
 
     private void createAvailableWorkplaceHashmap(Collection<Workplace> workplaces) {
         for (Workplace place: workplaces) {
             availableWorkplaces.putIfAbsent(place.getId(), new WorkplaceWrapper(place.getId(), place));
+        }
+    }
+
+    private void initializeWorkplaceData(Collection<Workplace> workplaces) {
+        for (Workplace place: workplaces) {
+            
         }
     }
 
