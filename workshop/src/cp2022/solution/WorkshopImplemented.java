@@ -144,12 +144,12 @@ public class WorkshopImplemented implements Workshop {
             entryCounter.putIfAbsent(currentThreadId, 2*maxEntries); // TODO move before mutex?
             long minimumPossibleEntries = Collections.min(entryCounter.values());
             if (minimumPossibleEntries == 0) {
-                howManyWaitForEntry++;
+                Semaphore meWaitingForEntry = new Semaphore(0);
+                waitForEntry.add(meWaitingForEntry);
                 mutexEntryCounter.release();
 
-                waitForEntry.acquire();
-
-                howManyWaitForEntry--; // Sharing mutex - can be released by the thread other than the owner
+                // The reference is remembered and the semaphore is pushed in the correct order
+                meWaitingForEntry.acquire();
             }
             mutexEntryCounter.release();
         } catch (InterruptedException e) {
