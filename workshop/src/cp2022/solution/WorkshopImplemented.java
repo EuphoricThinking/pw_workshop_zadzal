@@ -278,6 +278,33 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public void leave() {
+        // After use from actual workplace
+        Long currentThreadId = Thread.currentThread().getId();
+        WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
+
+        Semaphore mutexActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
+
+        try {
+            mutexActualWorkplace.acquire();
+
+            // It is impossible to use without entering, but now it is available for usage
+            isAvailableToUse.replace(myActualWorkplace, true);
+
+            // Others are allowed for entering
+            if (howManyWaitForASeat.get(myActualWorkplace) > 0) {
+                waitForSeat.get(myActualWorkplace).release();
+            }
+            else {
+                isAvailableToSeatAt.replace(myActualWorkplace, true);
+                mutexActualWorkplace.release();
+            }
+
+            actualWorkplace.remove(currentThreadId);
+            previousWorkplace.remove(currentThreadId);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("panic: unexpected thread interruption");
+        }
+
 
     }
 
