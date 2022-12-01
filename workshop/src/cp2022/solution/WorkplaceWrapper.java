@@ -106,7 +106,7 @@ public class WorkplaceWrapper extends Workplace {
 
             if (hasJustEntered.get(currentThreadId)) {
                 hasJustEntered.replace(currentThreadId, false);
-                
+
                 entryCounter.replaceAll((key, val) -> val--);
             }
 
