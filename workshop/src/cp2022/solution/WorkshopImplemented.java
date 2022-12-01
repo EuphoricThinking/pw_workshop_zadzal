@@ -262,6 +262,8 @@ public class WorkshopImplemented implements Workshop {
                 throw new RuntimeException("panic: unexpected thread interruption");
             }
 
+            System.out.println(Thread.currentThread().getName() + " " + isAvailableToSeatAt.get(myPreviousWorkplace) + " " + myPreviousWorkplace);
+
             Semaphore mutexMyDemandedWorkplace = mutexWaitForASeat.get(wid);
 
             // Trying to reach the next workplace
@@ -295,7 +297,7 @@ public class WorkshopImplemented implements Workshop {
         // TODO Moved from wid != actual
         // Update the seat, because the user is guaranteed to enter the demanded workplace
         // putActualAndPreviousWorkplace(wid, myActualWorkplace);
-        System.out.println(Thread.currentThread().getName() + " " + isAvailableToSeatAt.get(myPreviousWorkplace) + " " + myPreviousWorkplace);
+        // System.out.println(Thread.currentThread().getName() + " " + isAvailableToSeatAt.get(myPreviousWorkplace) + " " + myPreviousWorkplace);
         previousWorkplace.replace(currentThreadId, myActualWorkplace);
         actualWorkplace.replace(currentThreadId, wid);
 
@@ -320,6 +322,7 @@ public class WorkshopImplemented implements Workshop {
 
             // It is impossible to use without entering, but now it is available for usage
             isAvailableToUse.replace(myActualWorkplace, true);
+            System.out.println("Allowed to use");
 
             // Others are allowed for entering
             if (howManyWaitForASeat.get(myActualWorkplace) > 0) {
@@ -329,9 +332,11 @@ public class WorkshopImplemented implements Workshop {
                 isAvailableToSeatAt.replace(myActualWorkplace, true);
                 mutexActualWorkplace.release();
             }
+            System.out.println("Allowed for entering");
 
             actualWorkplace.remove(currentThreadId);
             previousWorkplace.remove(currentThreadId);
+            System.out.println("Removed id");
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }

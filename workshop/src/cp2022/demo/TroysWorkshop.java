@@ -99,6 +99,7 @@ public class TroysWorkshop {
                     entered = false;
                 }
             }
+            System.out.println(myName + " DONE");
         }
     }
     
