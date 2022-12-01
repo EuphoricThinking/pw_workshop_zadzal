@@ -155,6 +155,8 @@ public class WorkplaceWrapper extends Workplace {
                 mutexMyActualWorkplace.release();
             }
 
+            originalWorkplace.use();
+
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }

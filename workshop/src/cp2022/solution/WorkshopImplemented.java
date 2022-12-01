@@ -267,7 +267,7 @@ public class WorkshopImplemented implements Workshop {
         }
 
         // TODO Moved from wid != actual
-        // Update the seat, because the user is guaranteed to enter the wdemanded workplace
+        // Update the seat, because the user is guaranteed to enter the demanded workplace
         // putActualAndPreviousWorkplace(wid, myActualWorkplace);
         previousWorkplace.replace(currentThreadId, myActualWorkplace);
         actualWorkplace.replace(currentThreadId, wid);
