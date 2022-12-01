@@ -46,8 +46,8 @@ public class WorkplaceWrapper extends Workplace {
     // private Semaphore mutexWaitForSeat = new Semaphore(1);
     // private long howManyWaitForSeat = 0;
     private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeat;
-    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat;
-    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat;
+//    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat;
+//    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat;
 
     /* Synchronization of the permission to use (call use()) the given workplace
      *  Mutex protects also workplace data isAvailableToSeat
@@ -55,8 +55,8 @@ public class WorkplaceWrapper extends Workplace {
     // private Semaphore mutexWaitToUse = new Semaphore(1);
     // private long howManyWaitToUse = 0;
 //    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse;
-//    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse;
-//    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse;
+    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse;
+    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse;
 
 
     protected WorkplaceWrapper(WorkplaceId id, Workplace original,
@@ -71,8 +71,8 @@ public class WorkplaceWrapper extends Workplace {
                                ArrayDeque<Semaphore> waitForEntry,
                                ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData,
                                ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeat,
-                               ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat,
-                               ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat) {
+                               ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse,
+                               ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse) {
         super(id);
 
         this.originalWorkplace = original;
@@ -88,8 +88,8 @@ public class WorkplaceWrapper extends Workplace {
         this.waitForEntry = waitForEntry;
         this.mutexWorkplaceData = mutexWorkplaceData;
         this.mutexWaitForASeat = mutexWaitForASeat;
-        this.howManyWaitForASeat = howManyWaitForASeat;
-        this.waitForSeat = waitForSeat;
+        this.howManyWaitToUse = howManyWaitToUse;
+        this.waitToUse = waitToUse;
     }
 
     @Override
@@ -128,6 +128,10 @@ public class WorkplaceWrapper extends Workplace {
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
             if (previousWorkplace != actualWorkplace) {
                 Semaphore mutexMyPreviousWorkplace = mutexWaitForASeat.get(myPreviousWorkplace);
+
+                mutexMyPreviousWorkplace.acquire();
+
+                if (how)
             }
 
         } catch (InterruptedException e) {

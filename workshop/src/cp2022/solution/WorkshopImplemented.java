@@ -75,8 +75,8 @@ public class WorkshopImplemented implements Workshop {
             waitForEntry,
             mutexWorkplaceData,
             mutexWaitForASeat,
-            howManyWaitForASeat,
-            waitForSeat));
+            howManyWaitToUse,
+            waitToUse));
         }
     }
 
