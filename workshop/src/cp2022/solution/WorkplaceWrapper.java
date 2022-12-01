@@ -98,6 +98,7 @@ public class WorkplaceWrapper extends Workplace {
 
         // The switchTo() or entry() is finished
         try {
+            // Update entry 2*N constraints
             mutexEntryCounter.acquire();
 
             Long currentThreadId = Thread.currentThread().getId();
@@ -122,8 +123,6 @@ public class WorkplaceWrapper extends Workplace {
                 mutexEntryCounter.release();
             }
 
-            // For faster
-            Long currentId = Thread.currentThread().getId();
             // If the user has just entered
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");

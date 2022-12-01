@@ -150,9 +150,22 @@ public class WorkshopImplemented implements Workshop {
 
                 // The reference is remembered and the semaphore is pushed in the correct order
                 meWaitingForEntry.acquire();
+
+                // TODO I'm trying to keep the order, because otherwise the later would enter first
+                if (Collections.min(entryCounter.values()) > 0 && !waitForEntry.isEmpty()) {
+                    Semaphore firstInQueue = waitForEntry.remove();
+                    // TODO fix mutex sharing
+                    firstInQueue.release();
+                }
+                else {
+                    mutexEntryCounter.release();
+                }
+            }
+            else {
+                mutexEntryCounter.release();
             }
 
-            mutexEntryCounter.release();
+            // mutexEntryCounter.release();
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
