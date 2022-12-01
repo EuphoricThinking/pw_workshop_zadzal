@@ -74,9 +74,9 @@ public class WorkshopImplemented implements Workshop {
             mutexEntryCounter,
             waitForEntry,
             mutexWorkplaceData,
-            mutexWaitToUse,
-            howManyWaitToUse,
-            waitToUse));
+            mutexWaitForASeat,
+            howManyWaitForASeat,
+            waitForSeat));
         }
     }
 
@@ -222,11 +222,11 @@ public class WorkshopImplemented implements Workshop {
 
             // Updates information about my previous workplace
             try {
+                mutexMyPreviousWorkplace.acquire();
                 // The user has not changed the workplace yet
                 isAvailableToUse.replace(myPreviousWorkplace, false); //TODO look at it, may be dangerous
                 //TODO is mutex needed? is it needed at all?
 
-                mutexMyPreviousWorkplace.acquire();
                 // If another user wants to visit my previous workplace
                 if (howManyWaitForASeat.get(myPreviousWorkplace) > 0) {
                     waitForSeat.get(myPreviousWorkplace).release();
@@ -268,6 +268,7 @@ public class WorkshopImplemented implements Workshop {
 
         // TODO Moved from wid != actual
         // Update the seat, because the user is guaranteed to enter the wdemanded workplace
+        // putActualAndPreviousWorkplace(wid, myActualWorkplace);
         previousWorkplace.replace(currentThreadId, myActualWorkplace);
         actualWorkplace.replace(currentThreadId, wid);
 
