@@ -5,6 +5,7 @@ import cp2022.base.WorkplaceId;
 import cp2022.base.Workshop;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -103,11 +104,36 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace enter(WorkplaceId wid) {
-        hasJustEntered.put(Thread.currentThread().getId(), true);
+        Long currentThreadId = Thread.currentThread().getId();
+        hasJustEntered.put(currentThreadId, true);
         putActualAndPreviousWorkplace(wid, wid);
 
+        // Check whether entry is possible
         try {
             mutexEntryCounter.acquire();
+
+            entryCounter.putIfAbsent(currentThreadId, 2*maxEntries);
+            long minimumPossibleEntries = Collections.min(entryCounter.values());
+            if (minimumPossibleEntries == 0) {
+                howManyWaitForEntry++;
+                mutexEntryCounter.release();
+
+                waitForEntry.acquire();
+
+                howManyWaitForEntry--; // Sharing mutex - can be released by the thread other than the owner
+            }
+
+            mutexEntryCounter.release();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("panic: unexpected thread interruption");
+        }
+
+        // When waken up after waiting for possibility to entry, the user has to wait for seat.
+        // However, before completing that, no more than 2*N threads can enter,
+        // therefore entryCounter is not updated upon the given thread entry completion,
+        // confirmed at the beginning of decorative use() implementation.
+        try {
+
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
