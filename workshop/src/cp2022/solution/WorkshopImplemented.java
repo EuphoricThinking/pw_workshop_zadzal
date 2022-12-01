@@ -168,13 +168,13 @@ public class WorkshopImplemented implements Workshop {
             // but mutex is used to synchronize related operations
             mutexMyWorkplace.acquire();
             if (!isAvailableToSeatAt.get(wid)) {
-                howManyWaitForASeat.compute(wid, (key, val) -> val + 1L); // TODO does it work?
+                howManyWaitForASeat.compute(wid, (key, val) -> ++val); // TODO does it work?
                 Semaphore mySeatSemaphore = waitForSeat.get(wid);
                 mutexMyWorkplace.release();
 
                 mySeatSemaphore.acquire();
 
-                howManyWaitForASeat.compute(wid, (key, val) -> val - 1L);
+                howManyWaitForASeat.compute(wid, (key, val) -> --val);
             }
 
             isAvailableToSeatAt.replace(wid, false); // The current user is entering and later will call use()
@@ -233,13 +233,13 @@ public class WorkshopImplemented implements Workshop {
                 mutexMyDemandedWorkplace.acquire();
 
                 if (!isAvailableToSeatAt.get(wid)) {
-                    howManyWaitForASeat.compute(wid, (key, val) -> val + 1L); // TODO does it work?
+                    howManyWaitForASeat.compute(wid, (key, val) -> ++val); // TODO does it work?
                     Semaphore myDemandedSeatSemaphore = waitForSeat.get(wid);
                     mutexMyDemandedWorkplace.release();
 
                     myDemandedSeatSemaphore.acquire();
 
-                    howManyWaitForASeat.compute(wid, (key, val) -> val - 1L);
+                    howManyWaitForASeat.compute(wid, (key, val) -> --val);
                 }
 
                 // TODO Move to outer? for both same and not same
