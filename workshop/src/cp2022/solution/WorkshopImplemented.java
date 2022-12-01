@@ -4,9 +4,7 @@ import cp2022.base.Workplace;
 import cp2022.base.WorkplaceId;
 import cp2022.base.Workshop;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
@@ -36,8 +34,9 @@ public class WorkshopImplemented implements Workshop {
 
     /* Synchronization of the counter of possible number of entries to satisfy 2*N rule */
     private Semaphore mutexEntryCounter = new Semaphore(1);
-    private Long howManyWaitForEntry = 0L;
-    private Semaphore waitForEntry = new Semaphore(0, true); // FIFO semaphore
+//    private Long howManyWaitForEntry = 0L;
+//    private Semaphore waitForEntry = new Semaphore(0, true); // FIFO semaphore
+    private final ArrayDeque<Semaphore> waitForEntry = new ArrayDeque<>();
 
     /* Synchronization of the access to the workplace data */
     // private Semaphore mutexWorkplaceData = new Semaphore(1);

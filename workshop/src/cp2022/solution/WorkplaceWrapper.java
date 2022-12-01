@@ -3,6 +3,7 @@ package cp2022.solution;
 import cp2022.base.Workplace;
 import cp2022.base.WorkplaceId;
 
+import java.util.ArrayDeque;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -31,8 +32,8 @@ public class WorkplaceWrapper extends Workplace {
 
     /* Synchronization of the counter of possible number of entries to satisfy 2*N rule */
     private Semaphore mutexEntryCounter;
-    private long howManyWaitForEntry;
-    private Semaphore waitForEntry; // FIFO semaphore
+    // private long howManyWaitForEntry;
+    private ArrayDeque<Semaphore> waitForEntry; // FIFO semaphore
 
     /* Synchronization of the access to the workplace data */
     // private Semaphore mutexWorkplaceData = new Semaphore(1);
@@ -66,7 +67,7 @@ public class WorkplaceWrapper extends Workplace {
                                ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse,
                                Semaphore mutexEntryCounter,
 //                               Long howManyWaitForEntry,
-                               Semaphore waitForEntry,
+                               ArrayDeque<Semaphore> waitForEntry,
                                ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData,
                                ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse,
                                ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse,
