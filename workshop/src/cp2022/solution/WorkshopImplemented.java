@@ -141,10 +141,11 @@ public class WorkshopImplemented implements Workshop {
         try {
             mutexEntryCounter.acquire();
 
-            System.out.println(currentThreadId + " ENTRY " + maxEntries + " " + 2*maxEntries);
+            System.out.println(currentThreadId + " " + Thread.currentThread().getName() + " ENTRY " + maxEntries + " " + 2*maxEntries);
             entryCounter.putIfAbsent(currentThreadId, 2*maxEntries); // TODO move before mutex?
             long minimumPossibleEntries = Collections.min(entryCounter.values());
             if (minimumPossibleEntries == 0) {
+                System.out.println(Thread.currentThread().getName() + " No entries");
                 Semaphore meWaitingForEntry = new Semaphore(0);
                 waitForEntry.add(meWaitingForEntry);
                 mutexEntryCounter.release();
@@ -163,7 +164,9 @@ public class WorkshopImplemented implements Workshop {
                 }
             }
             else {
+                System.out.println(Thread.currentThread().getName() + " More entries, release entry");
                 mutexEntryCounter.release();
+                System.out.println(Thread.currentThread().getName() + " More entries, RELEASED entry");
             }
 
             // mutexEntryCounter.release();
@@ -178,13 +181,19 @@ public class WorkshopImplemented implements Workshop {
         try {
             Semaphore mutexMyWorkplace = mutexWaitForASeat.get(wid);
 
+            System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat");
             // We need concurrent map to safely access particular workshop data,
             // but mutex is used to synchronize related operations
             mutexMyWorkplace.acquire();
+
+            System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat ACQUIRED");
             if (!isAvailableToSeatAt.get(wid)) {
                 howManyWaitForASeat.compute(wid, (key, val) -> ++val); // TODO does it work?
                 Semaphore mySeatSemaphore = waitForSeat.get(wid);
                 mutexMyWorkplace.release();
+
+                System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat NOT AVAL " + wid.toString());
+                System.out.println(Thread.currentThread().getName() + " Trying to SEAT ENTER");
 
                 mySeatSemaphore.acquire();
 
@@ -194,6 +203,7 @@ public class WorkshopImplemented implements Workshop {
             // TODO handle null pointer exceptions
             isAvailableToSeatAt.replace(wid, false); // The current user is entering and later will call use()
             mutexMyWorkplace.release();
+            System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat RELEASED");
 
             return availableWorkplaces.get(wid);
         } catch (InterruptedException e) {
@@ -206,7 +216,10 @@ public class WorkshopImplemented implements Workshop {
     @Override
     public Workplace switchTo(WorkplaceId wid) {
         try {
+            System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexEntryCounter.acquire();
+
+            System.out.println(Thread.currentThread().getName() + " SWITCH entry acquired");
 
             entryCounter.putIfAbsent(Thread.currentThread().getId(), 2 * maxEntries);
 
@@ -253,13 +266,16 @@ public class WorkshopImplemented implements Workshop {
 
             // Trying to reach the next workplace
             try {
+                System.out.println(Thread.currentThread().getName() + " DEMANDED trying to acquire");
                 mutexMyDemandedWorkplace.acquire();
+                System.out.println(Thread.currentThread().getName() + " DEMANDED ACQUIRED");
 
                 if (!isAvailableToSeatAt.get(wid)) {
                     howManyWaitForASeat.compute(wid, (key, val) -> ++val); // TODO does it work?
                     Semaphore myDemandedSeatSemaphore = waitForSeat.get(wid);
                     mutexMyDemandedWorkplace.release();
 
+                    System.out.println(Thread.currentThread().getName() + "Trying to SEAT SWITCH");
                     myDemandedSeatSemaphore.acquire();
 
                     howManyWaitForASeat.compute(wid, (key, val) -> --val);
@@ -279,6 +295,7 @@ public class WorkshopImplemented implements Workshop {
         // TODO Moved from wid != actual
         // Update the seat, because the user is guaranteed to enter the demanded workplace
         // putActualAndPreviousWorkplace(wid, myActualWorkplace);
+        System.out.println(Thread.currentThread().getName() + " " + isAvailableToSeatAt.get(myPreviousWorkplace) + " " + myPreviousWorkplace);
         previousWorkplace.replace(currentThreadId, myActualWorkplace);
         actualWorkplace.replace(currentThreadId, wid);
 
@@ -288,14 +305,18 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public void leave() {
+        System.out.println("LEAVING " + Thread.currentThread().getName());
         // After use from actual workplace
         Long currentThreadId = Thread.currentThread().getId();
         WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
 
+        System.out.println("LEAVING actual workplace");
         Semaphore mutexActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
+
 
         try {
             mutexActualWorkplace.acquire();
+            System.out.println("LEAVING actual workplace acquired");
 
             // It is impossible to use without entering, but now it is available for usage
             isAvailableToUse.replace(myActualWorkplace, true);
