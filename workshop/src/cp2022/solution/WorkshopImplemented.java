@@ -5,10 +5,11 @@ import cp2022.base.WorkplaceId;
 import cp2022.base.Workshop;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class WorkshopImplemented implements Workshop {
-    private final ConcurrentHashMap<WorkplaceId, Workplace> availableWorkplaces = new ConcurrentHashMap<>(); // Read-only
+    private final ConcurrentHashMap<WorkplaceId, WorkplaceWrapper> availableWorkplaces = new ConcurrentHashMap<>(); // Read-only
 
     private void createAvailableWorkplaceHashmap(Collection<Workplace> workplaces) {
         for (Workplace place: workplaces) {
@@ -18,6 +19,7 @@ public class WorkshopImplemented implements Workshop {
 
     public WorkshopImplemented(Collection<Workplace> workplaces) {
         createAvailableWorkplaceHashmap(workplaces);
+        printout();
     }
 
     @Override
@@ -33,5 +35,13 @@ public class WorkshopImplemented implements Workshop {
     @Override
     public void leave() {
 
+    }
+
+    //TODO remove
+    public void printout() {
+        availableWorkplaces.forEachValue(Long.MAX_VALUE, (w)-> {
+            System.out.println(w.getIdName());
+        });
+        System.out.println("decorated");
     }
 }

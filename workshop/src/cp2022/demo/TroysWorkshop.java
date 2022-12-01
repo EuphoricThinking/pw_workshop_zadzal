@@ -17,6 +17,7 @@ import cp2022.base.Workplace;
 import cp2022.base.WorkplaceId;
 import cp2022.base.Workshop;
 import cp2022.solution.WorkshopFactory;
+import cp2022.solution.WorkshopImplemented;
 
 
 public class TroysWorkshop {
@@ -114,7 +115,16 @@ public class TroysWorkshop {
         workplaces.add(new TroysWorkplace(weldingId));
         workplaces.add(new TroysWorkplace(quenchingId));
         workplaces.add(new TroysWorkplace(paintingId));
+
+        /*
+        //FIXME ADDED
+        for (Workplace w: workplaces) {
+            System.out.println(w.getId());
+        }
+        System.out.println("Ended firtst tour"); */
+
         Workshop workshop = WorkshopFactory.newWorkshop(workplaces);
+
         // Create the DIY fans.
         Thread alice =
                 new Thread(
