@@ -22,6 +22,10 @@ public class WorkshopImplemented implements Workshop {
     private final ConcurrentHashMap<Long, WorkplaceId> actualWorkplace = new ConcurrentHashMap<>();
     // Actual workplace a given thread is seated at: <ThreadId, WorkplaceId>
     private final ConcurrentHashMap<Long, WorkplaceId> previousWorkplace = new ConcurrentHashMap<>();
+    // Enables distinction between entering and switching to users; in ConcurrentHashMap it is impossible
+    // to put null as a value or key, therefore checking condition previousWorkplace == null
+    // for entering users throws a NullPointerException
+    private final ConcurrentHashMap<Long, Boolean> hasJustEntered = new ConcurrentHashMap<>();
 
     /* Workplace data */
     // Indicates whether the user can seat at the given workplace
@@ -81,6 +85,20 @@ public class WorkshopImplemented implements Workshop {
 
         // FIXME remove
         printout();
+    }
+
+    // Only one thread will add a given entry - the thread of the given key id
+    private void putActualAndPreviousWorkplace(WorkplaceId actual, WorkplaceId previous) {
+        long currentThreadId = Thread.currentThread().getId();
+        WorkplaceId beenActualPutBefore = actualWorkplace.putIfAbsent(currentThreadId, actual);
+        if (beenActualPutBefore != null) { // returns null if the key has NOT been mapped before
+            actualWorkplace.replace(currentThreadId, actual);
+        }
+
+        WorkplaceId beenPreviousPutBefore = previousWorkplace.putIfAbsent(currentThreadId, previous);
+        if (beenPreviousPutBefore != null) {
+            previousWorkplace.replace(currentThreadId, previous);
+        }
     }
 
     @Override
