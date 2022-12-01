@@ -105,10 +105,10 @@ public class WorkplaceWrapper extends Workplace {
 
             entryCounter.remove(currentThreadId);
 
-            if (hasJustEntered.get(currentThreadId)) {
-                hasJustEntered.replace(currentThreadId, false);
+            if (hasJustEntered.contains(currentThreadId)) {
+                hasJustEntered.remove(currentThreadId);
 
-                entryCounter.replaceAll((key, val) -> val - 1L);
+                entryCounter.replaceAll((key, val) -> --val); // val  - 1L
             }
 
             long minimumPossibleEntries = Collections.min(entryCounter.values());
@@ -117,7 +117,7 @@ public class WorkplaceWrapper extends Workplace {
             if (minimumPossibleEntries > 0 && !waitForEntry.isEmpty()) {
                 Semaphore firstInQueue = waitForEntry.remove();
                 // TODO fix mutex sharing
-                firstInQueue.release(); // Shares the mutex, although it will be released shortly after
+                firstInQueue.release();
             }
             else {
                 mutexEntryCounter.release();
