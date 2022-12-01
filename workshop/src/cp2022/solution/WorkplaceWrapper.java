@@ -4,6 +4,7 @@ import cp2022.base.Workplace;
 import cp2022.base.WorkplaceId;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -93,6 +94,40 @@ public class WorkplaceWrapper extends Workplace {
 
     @Override
     public void use() {
+        // Pre-use phase
+
+        // The switchTo() or entry() is finished
+        try {
+            mutexEntryCounter.acquire();
+
+            Long currentThreadId = Thread.currentThread().getId();
+
+            entryCounter.remove(currentThreadId);
+
+            if (hasJustEntered.get(currentThreadId)) {
+                hasJustEntered.replace(currentThreadId, false);
+                
+                entryCounter.replaceAll((key, val) -> val--);
+            }
+
+            long minimumPossibleEntries = Collections.min(entryCounter.values());
+
+            // 2*N is satisfied and there are users waiting for entry
+            if (minimumPossibleEntries > 0 && !waitForEntry.isEmpty()) {
+                Semaphore firstInQueue = waitForEntry.remove();
+                // TODO fix mutex sharing
+                firstInQueue.release(); // Shares the mutex, although it will be released shortly after
+            }
+            else {
+                mutexEntryCounter.release();
+            }
+
+            // For faster
+            Long currentId = Thread.currentThread().getId();
+            // If the user has just entered
+        } catch (InterruptedException e) {
+            throw new RuntimeException("panic: unexpected thread interruption");
+        }
     }
 
     public WorkplaceId getIdName() {

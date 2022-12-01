@@ -151,6 +151,7 @@ public class WorkshopImplemented implements Workshop {
                 // The reference is remembered and the semaphore is pushed in the correct order
                 meWaitingForEntry.acquire();
             }
+
             mutexEntryCounter.release();
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
