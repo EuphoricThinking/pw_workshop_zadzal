@@ -239,7 +239,7 @@ public class WorkshopImplemented implements Workshop {
 
                     myDemandedSeatSemaphore.acquire();
 
-                    howManyWaitForASeat.compute(wid, (key, val) -> val + 1L);
+                    howManyWaitForASeat.compute(wid, (key, val) -> val - 1L);
                 }
 
                 // TODO Move to outer? for both same and not same
