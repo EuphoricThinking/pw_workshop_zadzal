@@ -65,7 +65,7 @@ public class WorkplaceWrapper extends Workplace {
 //                               ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToSeatAt,
                                ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse,
                                Semaphore mutexEntryCounter,
-                               long howManyWaitForEntry,
+                               Long howManyWaitForEntry,
                                Semaphore waitForEntry,
                                ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData,
                                ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse,
@@ -80,6 +80,9 @@ public class WorkplaceWrapper extends Workplace {
         this.previousWorkplace = previousWorkplace;
         this.hasJustEntered = hasJustEntered;
 //        this.isAvailableToSeatAt = isAvailableToSeatAt;
+        this.isAvailableToUse = isAvailableToUse;
+        this.mutexEntryCounter = mutexEntryCounter;
+        this.howManyWaitForEntry = howManyWaitForEntry;
     }
 
     @Override

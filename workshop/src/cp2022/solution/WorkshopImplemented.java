@@ -36,7 +36,7 @@ public class WorkshopImplemented implements Workshop {
 
     /* Synchronization of the counter of possible number of entries to satisfy 2*N rule */
     private Semaphore mutexEntryCounter = new Semaphore(1);
-    private long howManyWaitForEntry = 0;
+    private Long howManyWaitForEntry = 0L;
     private Semaphore waitForEntry = new Semaphore(0, true); // FIFO semaphore
 
     /* Synchronization of the access to the workplace data */
