@@ -131,7 +131,28 @@ public class WorkplaceWrapper extends Workplace {
 
                 mutexMyPreviousWorkplace.acquire();
 
-                if (how)
+                if (howManyWaitToUse.get(myPreviousWorkplace) > 0) {
+                    waitToUse.get(myPreviousWorkplace).release();
+                }
+                else {
+                    isAvailableToUse.replace(myPreviousWorkplace, true);
+                    mutexMyPreviousWorkplace.release();
+                }
+
+                Semaphore mutexMyActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
+                mutexMyActualWorkplace.acquire();
+
+                if (!isAvailableToUse.get(myActualWorkplace)) {
+                    howManyWaitToUse.compute(myActualWorkplace, (key, val) -> ++val);
+                    Semaphore waitForActual = waitToUse.get(myActualWorkplace);
+                    mutexMyActualWorkplace.release();
+
+                    waitForActual.acquire();
+
+                    howManyWaitToUse.compute(myActualWorkplace, (key, val) -> --val);
+                }
+
+                mutexMyActualWorkplace.release();
             }
 
         } catch (InterruptedException e) {
