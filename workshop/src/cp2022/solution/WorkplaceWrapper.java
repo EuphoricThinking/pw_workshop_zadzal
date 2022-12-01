@@ -103,6 +103,7 @@ public class WorkplaceWrapper extends Workplace {
 
             Long currentThreadId = Thread.currentThread().getId();
 
+            System.out.println("1 SIZE: " + entryCounter.size() + " " + currentThreadId);
             // Task completed - remove 2*N constraint for a given thread
             entryCounter.remove(currentThreadId);
 
@@ -113,10 +114,11 @@ public class WorkplaceWrapper extends Workplace {
                 entryCounter.replaceAll((key, val) -> --val); // val  - 1L
             }
 
-            long minimumPossibleEntries = Collections.min(entryCounter.values());
+            System.out.println("2 SIZE: " + entryCounter.size() + " " + currentThreadId);
+            // long minimumPossibleEntries = Collections.min(entryCounter.values());
 
             // 2*N is satisfied and there are users waiting for entry
-            if (minimumPossibleEntries > 0 && !waitForEntry.isEmpty()) {
+            if (!entryCounter.isEmpty() && Collections.min(entryCounter.values()) > 0 && !waitForEntry.isEmpty()) {
                 Semaphore firstInQueue = waitForEntry.remove();
                 // TODO fix mutex sharing
                 firstInQueue.release();

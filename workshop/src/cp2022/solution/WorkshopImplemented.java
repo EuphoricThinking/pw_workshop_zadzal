@@ -141,6 +141,7 @@ public class WorkshopImplemented implements Workshop {
         try {
             mutexEntryCounter.acquire();
 
+            System.out.println(currentThreadId + " ENTRY " + maxEntries + " " + 2*maxEntries);
             entryCounter.putIfAbsent(currentThreadId, 2*maxEntries); // TODO move before mutex?
             long minimumPossibleEntries = Collections.min(entryCounter.values());
             if (minimumPossibleEntries == 0) {
@@ -152,7 +153,7 @@ public class WorkshopImplemented implements Workshop {
                 meWaitingForEntry.acquire();
 
                 // TODO I'm trying to keep the order, because otherwise the later would enter first
-                if (Collections.min(entryCounter.values()) > 0 && !waitForEntry.isEmpty()) {
+                if (!entryCounter.isEmpty() && Collections.min(entryCounter.values()) > 0 && !waitForEntry.isEmpty()) {
                     Semaphore firstInQueue = waitForEntry.remove();
                     // TODO fix mutex sharing
                     firstInQueue.release();

@@ -48,7 +48,7 @@ public class TroysWorkshop {
         @Override
         public void use() {
             Thread dyiManiac = Thread.currentThread();
-            System.out.println(dyiManiac.getName() + " starts using " + this.getFullName());
+            System.out.println(dyiManiac.getName() + dyiManiac.getId() + " starts using " + this.getFullName());
             try {
                 Thread.sleep(ThreadLocalRandom.current().nextLong(MIN_USE_TIME_IN_MS, MAX_USE_TIME_IN_MS));
             } catch (InterruptedException e) {
