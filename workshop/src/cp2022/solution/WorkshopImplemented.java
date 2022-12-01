@@ -240,23 +240,24 @@ public class WorkshopImplemented implements Workshop {
         WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
 
         // wid is an ID of the workplace I'm going to change to
+        // I have NOT changed that workplace yet
         if (myActualWorkplace != wid) { // TODO changed from my previous workplace
-            Semaphore mutexMyPreviousWorkplace = mutexWaitForASeat.get(myPreviousWorkplace);
+            Semaphore mutexMyActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
 
             // Updates information about my previous workplace
             try {
-                mutexMyPreviousWorkplace.acquire();
+                mutexMyActualWorkplace.acquire();
                 // The user has not changed the workplace yet
-                isAvailableToUse.replace(myPreviousWorkplace, false); //TODO look at it, may be dangerous
+                isAvailableToUse.replace(myActualWorkplace, false); //TODO look at it, may be dangerous
                 //TODO is mutex needed? is it needed at all?
 
                 // If another user wants to visit my previous workplace
-                if (howManyWaitForASeat.get(myPreviousWorkplace) > 0) {
-                    waitForSeat.get(myPreviousWorkplace).release();
+                if (howManyWaitForASeat.get(myActualWorkplace) > 0) {
+                    waitForSeat.get(myActualWorkplace).release();
                 }
                 else {
-                    isAvailableToSeatAt.replace(myPreviousWorkplace, true);
-                    mutexMyPreviousWorkplace.release();
+                    isAvailableToSeatAt.replace(myActualWorkplace, true);
+                    mutexMyActualWorkplace.release();
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException("panic: unexpected thread interruption");
