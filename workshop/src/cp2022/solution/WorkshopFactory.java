@@ -8,8 +8,10 @@
 package cp2022.solution;
 
 import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
 
 import cp2022.base.Workplace;
+import cp2022.base.WorkplaceId;
 import cp2022.base.Workshop;
 
 
@@ -18,8 +20,11 @@ public final class WorkshopFactory {
     public final static Workshop newWorkshop(
             Collection<Workplace> workplaces
     ) {
+
         // FIXME: implement
-        throw new RuntimeException("not implemented");
+        return new WorkshopImplemented(workplaces);
+
+       // throw new RuntimeException("not implemented");
     }
     
 }
