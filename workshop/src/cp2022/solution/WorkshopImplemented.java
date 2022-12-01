@@ -241,7 +241,7 @@ public class WorkshopImplemented implements Workshop {
                 throw new RuntimeException("panic: unexpected thread interruption");
             }
         }
-        
+
         return availableWorkplaces.get(wid);
        // return null;
     }
