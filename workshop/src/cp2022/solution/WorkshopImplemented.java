@@ -96,8 +96,8 @@ public class WorkshopImplemented implements Workshop {
             howManyWaitForASeat.putIfAbsent(placeId, 0L);
             howManyWaitToUse.putIfAbsent(placeId, 0L);
 
-            mutexWaitToUse.putIfAbsent(placeId, new Semaphore(1));
-            mutexWaitForASeat.putIfAbsent(placeId, new Semaphore(1));
+            mutexWaitToUse.putIfAbsent(placeId, new Semaphore(1, true));
+            mutexWaitForASeat.putIfAbsent(placeId, new Semaphore(1, true));
 
 
         }
@@ -190,6 +190,7 @@ public class WorkshopImplemented implements Workshop {
                 howManyWaitForASeat.compute(wid, (key, val) -> --val);
             }
 
+            // TODO handle null pointer exceptions
             isAvailableToSeatAt.replace(wid, false); // The current user is entering and later will call use()
             mutexMyWorkplace.release();
 
@@ -203,7 +204,15 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
-        entryCounter.putIfAbsent(Thread.currentThread().getId(), 2*maxEntries);
+        try {
+            mutexEntryCounter.acquire();
+
+            entryCounter.putIfAbsent(Thread.currentThread().getId(), 2 * maxEntries);
+
+            mutexEntryCounter.release();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("panic: unexpected thread interruption");
+        }
 
         // Earlier assignment would require non-atomic retrieval of the value for getId()
         // and non-atomic assignment, then the assigned value would be used for putting the counter.
