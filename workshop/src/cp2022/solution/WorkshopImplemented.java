@@ -190,8 +190,10 @@ public class WorkshopImplemented implements Workshop {
         // access for multiple threads
         WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
         WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
-        if (myActualWorkplace != myPreviousWorkplace) {
-            Semaphore mutexMyPreviousWorkplace = mutexWaitForASeat.get(wid);
+
+        // wid is an ID of the workplace I'm going to change to
+        if (myActualWorkplace != wid) { // TODO changed from my previous workplace
+            Semaphore mutexMyPreviousWorkplace = mutexWaitForASeat.get(myPreviousWorkplace);
 
             // Updates information about my previous workplace
             try {
@@ -234,13 +236,15 @@ public class WorkshopImplemented implements Workshop {
 
                 mutexMyDemandedWorkplace.release();
 
-                previousWorkplace.replace(currentThreadId, myActualWorkplace);
-                actualWorkplace.replace(currentThreadId, wid);
-
             } catch (InterruptedException e) {
                 throw new RuntimeException("panic: unexpected thread interruption");
             }
         }
+
+        // TODO Moved from wid != actual
+        // Update the seat, because the user is guaranteed to enter the wdemanded workplace
+        previousWorkplace.replace(currentThreadId, myActualWorkplace);
+        actualWorkplace.replace(currentThreadId, wid);
 
         return availableWorkplaces.get(wid);
        // return null;
