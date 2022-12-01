@@ -103,8 +103,10 @@ public class WorkplaceWrapper extends Workplace {
 
             Long currentThreadId = Thread.currentThread().getId();
 
+            // Task completed - remove 2*N constraint for a given thread
             entryCounter.remove(currentThreadId);
 
+            // Check if after enter()
             if (hasJustEntered.get(currentThreadId) != null) { // The map contains the key
                 hasJustEntered.remove(currentThreadId);
 
@@ -131,6 +133,7 @@ public class WorkplaceWrapper extends Workplace {
 
                 mutexMyPreviousWorkplace.acquire();
 
+                // Enable to use the previous workplace
                 if (howManyWaitToUse.get(myPreviousWorkplace) > 0) {
                     waitToUse.get(myPreviousWorkplace).release();
                 }
@@ -142,6 +145,8 @@ public class WorkplaceWrapper extends Workplace {
                 Semaphore mutexMyActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
                 mutexMyActualWorkplace.acquire();
 
+                // Checks whether use() is available at the actual workplace (i.e. the previous user
+                // has not completed their switchTo()
                 if (!isAvailableToUse.get(myActualWorkplace)) {
                     howManyWaitToUse.compute(myActualWorkplace, (key, val) -> ++val);
                     Semaphore waitForActual = waitToUse.get(myActualWorkplace);
