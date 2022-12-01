@@ -65,7 +65,19 @@ public class WorkshopImplemented implements Workshop {
 
     private void createAvailableWorkplaceHashmap(Collection<Workplace> workplaces) {
         for (Workplace place: workplaces) {
-            availableWorkplaces.putIfAbsent(place.getId(), new WorkplaceWrapper(place.getId(), place));
+            availableWorkplaces.putIfAbsent(place.getId(),
+                    new WorkplaceWrapper(place.getId(), place,
+                            entryCounter,
+            actualWorkplace,
+            previousWorkplace,
+            hasJustEntered,
+            isAvailableToUse,
+            mutexEntryCounter,
+            waitForEntry,
+            mutexWorkplaceData,
+            mutexWaitToUse,
+            howManyWaitToUse,
+            waitToUse));
         }
     }
 

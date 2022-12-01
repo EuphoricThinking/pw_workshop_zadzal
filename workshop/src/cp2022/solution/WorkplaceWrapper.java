@@ -43,9 +43,9 @@ public class WorkplaceWrapper extends Workplace {
      * */
     // private Semaphore mutexWaitForSeat = new Semaphore(1);
     // private long howManyWaitForSeat = 0;
-    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeat;
-    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat;
-    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat;
+//    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeat;
+//    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat;
+//    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat;
 
     /* Synchronization of the permission to use (call use()) the given workplace
      *  Mutex protects also workplace data isAvailableToSeat
