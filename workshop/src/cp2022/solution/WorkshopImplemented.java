@@ -140,7 +140,6 @@ public class WorkshopImplemented implements Workshop {
 
                 howManyWaitForEntry--; // Sharing mutex - can be released by the thread other than the owner
             }
-
             mutexEntryCounter.release();
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
@@ -179,7 +178,72 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
-        return null;
+        entryCounter.putIfAbsent(Thread.currentThread().getId(), 2*maxEntries);
+
+        // Earlier assignment would require non-atomic retrieval of the value for getId()
+        // and non-atomic assignment, then the assigned value would be used for putting the counter.
+        // Retrieval without preceding assignment is slightly faster and indicates the demand
+        // for switching as soon as it is possible.
+        Long currentThreadId = Thread.currentThread().getId();
+
+        // Only current thread retrieves these values, but concurrent hashmap enables thread-safe
+        // access for multiple threads
+        WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
+        WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
+        if (myActualWorkplace != myPreviousWorkplace) {
+            Semaphore mutexMyPreviousWorkplace = mutexWaitForASeat.get(wid);
+
+            // Updates information about my previous workplace
+            try {
+                // The user has not changed the workplace yet
+                isAvailableToUse.replace(myPreviousWorkplace, false); //TODO look at it, may be dangerous
+                //TODO is mutex needed? is it needed at all?
+
+                mutexMyPreviousWorkplace.acquire();
+                // If another user wants to visit my previous workplace
+                if (howManyWaitForASeat.get(myPreviousWorkplace) > 0) {
+                    waitForSeat.get(myPreviousWorkplace).release();
+                }
+                else {
+                    isAvailableToSeatAt.replace(myPreviousWorkplace, true);
+                    mutexMyPreviousWorkplace.release();
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException("panic: unexpected thread interruption");
+            }
+
+            Semaphore mutexMyDemandedWorkplace = mutexWaitForASeat.get(wid);
+
+            // Trying to reach the next workplace
+            try {
+                mutexMyDemandedWorkplace.acquire();
+
+                if (!isAvailableToSeatAt.get(wid)) {
+                    howManyWaitForASeat.compute(wid, (key, val) -> val++); // TODO does it work?
+                    Semaphore myDemandedSeatSemaphore = waitForSeat.get(wid);
+                    mutexMyDemandedWorkplace.release();
+
+                    myDemandedSeatSemaphore.acquire();
+
+                    howManyWaitForASeat.compute(wid, (key, val) -> val--);
+                }
+
+                // TODO Move to outer? for both same and not same
+                // Now the user is going to seat at and then perform use()
+                isAvailableToSeatAt.replace(wid, false);
+
+                mutexMyDemandedWorkplace.release();
+
+                previousWorkplace.replace(currentThreadId, myActualWorkplace);
+                actualWorkplace.replace(currentThreadId, wid);
+
+            } catch (InterruptedException e) {
+                throw new RuntimeException("panic: unexpected thread interruption");
+            }
+        }
+        
+        return availableWorkplaces.get(wid);
+       // return null;
     }
 
     @Override
