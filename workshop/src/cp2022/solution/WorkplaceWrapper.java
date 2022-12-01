@@ -25,7 +25,7 @@ public class WorkplaceWrapper extends Workplace {
 
     /* Workplace data */
     // Indicates whether the user can seat at the given workplace
-    private final ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToSeatAt;
+//    private final ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToSeatAt;
     // Idicates whether the user can start using (call use()) at the given workplace
     private final ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse;
 
@@ -57,9 +57,29 @@ public class WorkplaceWrapper extends Workplace {
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse;
 
 
-    protected WorkplaceWrapper(WorkplaceId id, Workplace original) {
+    protected WorkplaceWrapper(WorkplaceId id, Workplace original,
+                               HashMap<Long, Long> entryCounter,
+                               ConcurrentHashMap<Long, WorkplaceId> actualWorkplace,
+                               ConcurrentHashMap<Long, WorkplaceId> previousWorkplace,
+                               ConcurrentHashMap<Long, Boolean> hasJustEntered,
+//                               ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToSeatAt,
+                               ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse,
+                               Semaphore mutexEntryCounter,
+                               long howManyWaitForEntry,
+                               Semaphore waitForEntry,
+                               ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData,
+                               ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse,
+                               ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse,
+                               ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse) {
         super(id);
+
         this.originalWorkplace = original;
+
+        this.entryCounter = entryCounter;
+        this.actualWorkplace = actualWorkplace;
+        this.previousWorkplace = previousWorkplace;
+        this.hasJustEntered = hasJustEntered;
+//        this.isAvailableToSeatAt = isAvailableToSeatAt;
     }
 
     @Override
