@@ -43,13 +43,17 @@ public class WorkshopImplemented implements Workshop {
     private Semaphore mutexWorkplaceData = new Semaphore(1);
 
     /* Synchronization of the access to the seat at the given workplace */
-    private Semaphore mutexWaitForSeat = new Semaphore(1);
-    private long howManyWaitForSeat = 0;
+    // private Semaphore mutexWaitForSeat = new Semaphore(1);
+    // private long howManyWaitForSeat = 0;
+    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeat = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat = new ConcurrentHashMap<>();
 
     /* Synchronization of the permission to use (call use()) the given workplace */
-    private Semaphore mutexWaitToUse = new Semaphore(1);
-    private long howManyWaitToUse = 0;
+    // private Semaphore mutexWaitToUse = new Semaphore(1);
+    // private long howManyWaitToUse = 0;
+    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse = new ConcurrentHashMap<>();
 
 
@@ -69,8 +73,15 @@ public class WorkshopImplemented implements Workshop {
 
     private void initializationOfSemaphoreMaps(Collection<Workplace> workplaces) {
         for (Workplace place: workplaces) {
-            waitForSeat.putIfAbsent(place.getId(), new Semaphore(0, true));
-            waitToUse.putIfAbsent(place.getId(), new Semaphore(0, true));
+            WorkplaceId placeId = place.getId();
+            waitForSeat.putIfAbsent(placeId, new Semaphore(0, true));
+            waitToUse.putIfAbsent(placeId, new Semaphore(0, true));
+
+            howManyWaitForASeat.putIfAbsent(placeId, 0L);
+            howManyWaitToUse.putIfAbsent(placeId, 0L);
+
+            mutexWaitToUse.putIfAbsent(placeId, new Semaphore(1));
+            mutexWaitForASeat.putIfAbsent(placeId, new Semaphore(1));
         }
     }
 
