@@ -103,6 +103,15 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace enter(WorkplaceId wid) {
+        hasJustEntered.put(Thread.currentThread().getId(), true);
+        putActualAndPreviousWorkplace(wid, wid);
+
+        try {
+            mutexEntryCounter.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("panic: unexpected thread interruption");
+        }
+
         return null;
     }
 
