@@ -107,7 +107,7 @@ public class WorkplaceWrapper extends Workplace {
             if (hasJustEntered.get(currentThreadId)) {
                 hasJustEntered.replace(currentThreadId, false);
 
-                entryCounter.replaceAll((key, val) -> val--);
+                entryCounter.replaceAll((key, val) -> val - 1L);
             }
 
             long minimumPossibleEntries = Collections.min(entryCounter.values());
