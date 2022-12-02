@@ -107,12 +107,15 @@ public class WorkplaceWrapper extends Workplace {
             // Task completed - remove 2*N constraint for a given thread
             entryCounter.remove(currentThreadId);
 
+            // TODO going to move to entry
             // Check if after enter()
+
             if (hasJustEntered.get(currentThreadId) != null) { // The map contains the key
                 hasJustEntered.remove(currentThreadId);
 
                 entryCounter.replaceAll((key, val) -> --val); // val  - 1L
             }
+
 
             // System.out.println("2 SIZE: " + entryCounter.size() + " " + currentThreadId);
             // long minimumPossibleEntries = Collections.min(entryCounter.values());

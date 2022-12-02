@@ -110,7 +110,7 @@ public class WorkshopImplemented implements Workshop {
     }
 
     public WorkshopImplemented(Collection<Workplace> workplaces) {
-        this.maxEntries = 2*workplaces.size() - 1; //TODO experiment
+        this.maxEntries = 2L *workplaces.size(); //TODO experiment
         constructorDataInitialization(workplaces);
 
         // System.out.println("maxEntres: " + this.maxEntries + " doubled: " + 2*this.maxEntries);
@@ -171,6 +171,8 @@ public class WorkshopImplemented implements Workshop {
                 // System.out.println(Thread.currentThread().getName() + " More entries, RELEASED entry");
              */
             }
+            // TODO Added from entry -> trying without else clause
+            // entryCounter.replaceAll((key, val) -> --val);
 
             mutexEntryCounter.release();
         } catch (InterruptedException e) {
