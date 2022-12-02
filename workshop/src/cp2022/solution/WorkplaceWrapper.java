@@ -103,7 +103,7 @@ public class WorkplaceWrapper extends Workplace {
 
             Long currentThreadId = Thread.currentThread().getId();
 
-            // System.out.println("1 SIZE: " + entryCounter.size() + " " + currentThreadId);
+           //System.out.println("1 SIZE: " + entryCounter.size() + " " + currentThreadId);
             // Task completed - remove 2*N constraint for a given thread
             entryCounter.remove(currentThreadId);
 
@@ -117,7 +117,7 @@ public class WorkplaceWrapper extends Workplace {
             }
             */
 
-            // System.out.println("2 SIZE: " + entryCounter.size() + " " + currentThreadId);
+           //System.out.println("2 SIZE: " + entryCounter.size() + " " + currentThreadId);
             // long minimumPossibleEntries = Collections.min(entryCounter.values());
 
             // 2*N is satisfied and there are users waiting for entry
@@ -133,10 +133,9 @@ public class WorkplaceWrapper extends Workplace {
             // If the workplace has been changed - enable use() for another users
             WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
-            System.out.println(myPreviousWorkplace + " actual: " + myActualWorkplace + " compare: " + (myActualWorkplace == myPreviousWorkplace) +
-                    " equals: " + myActualWorkplace.equals(myPreviousWorkplace));
+            //System.out.println(myPreviousWorkplace + " actual: " + myActualWorkplace + " compare: " + (myActualWorkplace == myPreviousWorkplace) + " equals: " + myActualWorkplace.equals(myPreviousWorkplace));
             if (myPreviousWorkplace != myActualWorkplace) {
-                System.out.println("previous is not actual " + Thread.currentThread().getName());
+                //System.out.println("previous is not actual " + Thread.currentThread().getName());
                 Semaphore mutexMyPreviousWorkplace = mutexWaitForASeat.get(myPreviousWorkplace);
 
                 mutexMyPreviousWorkplace.acquire();
@@ -177,15 +176,14 @@ public class WorkplaceWrapper extends Workplace {
             // if (hasJustEntered.get(currentThreadId) != null || previousWorkplace != actualWorkplace) {// The map contains the key
             if (ifHasJustEntered || myPreviousWorkplace != myActualWorkplace) {
                 if (ifHasJustEntered) {
-                    System.out.println(Thread.currentThread().getName() + " USE AFTER ENTER");
+                    //System.out.println(Thread.currentThread().getName() + " USE AFTER ENTER");
                 }
                 // hasJustEntered.remove(currentThreadId);
 
                 Semaphore mutexMyActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
                 mutexMyActualWorkplace.acquire();
 
-                System.out.println("Will I stop at " + actualWorkplace.get(currentThreadId) + "? " + Thread.currentThread().getName()  + " use: " +
-                        isAvailableToUse.get(actualWorkplace.get(currentThreadId)));
+                //System.out.println("Will I stop at " + actualWorkplace.get(currentThreadId) + "? " + Thread.currentThread().getName()  + " use: " + isAvailableToUse.get(actualWorkplace.get(currentThreadId)));
 
                 // Checks whether use() is available at the actual workplace (i.e. the previous user
                 // has not completed their switchTo()
@@ -194,12 +192,11 @@ public class WorkplaceWrapper extends Workplace {
                     Semaphore waitForActual = waitToUse.get(myActualWorkplace);
                     mutexMyActualWorkplace.release();
 
-                    System.out.println(Thread.currentThread().getName() + " needs to stop");
+                    //System.out.println(Thread.currentThread().getName() + " needs to stop");
 
                     waitForActual.acquire();
 
-                    System.out.println(Thread.currentThread().getName()  + " RELEASED use: " +
-                            isAvailableToUse.get(actualWorkplace.get(currentThreadId)));
+                    //System.out.println(Thread.currentThread().getName()  + " RELEASED use: " + isAvailableToUse.get(actualWorkplace.get(currentThreadId)));
 
                     howManyWaitToUse.compute(myActualWorkplace, (key, val) -> --val);
                 }
@@ -210,11 +207,10 @@ public class WorkplaceWrapper extends Workplace {
                 mutexMyActualWorkplace.release();
             }
 
-            System.out.println("USE " + actualWorkplace.get(currentThreadId) + " by " + Thread.currentThread().getName()  + " use: " +
-                    isAvailableToUse.get(actualWorkplace.get(currentThreadId)));
-            System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE " + actualWorkplace.get(currentThreadId));
+            //System.out.println("USE " + actualWorkplace.get(currentThreadId) + " by " + Thread.currentThread().getName()  + " use: " +isAvailableToUse.get(actualWorkplace.get(currentThreadId)));
+            //System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE " + actualWorkplace.get(currentThreadId)) + originalWorkplace.use();
             originalWorkplace.use();
-            System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE " + actualWorkplace.get(currentThreadId));
+            //System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE " + actualWorkplace.get(currentThreadId));
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
