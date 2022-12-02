@@ -8,6 +8,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
+/* TODO ustaw minimum w mapie po iteracji w leave
+: albo: za każdym razem ustawiaj minimum w mapie, kiedy przejdziesz w use, ponieważ zawsze tylko minimum nie zmieni się
+ przechodzisz przez mapę za każdym; każdy nowo wchodzący sprawdza jako warunek minimum z seta/mapki, zmniejsza wszystkie liczniki
+ o jeden, zmniejsza minimum */
 public class WorkshopImplemented implements Workshop {
     // Number of available entries
     private final long maxEntries;
