@@ -155,6 +155,7 @@ public class WorkshopImplemented implements Workshop {
             if (minimumPossibleEntries == 0) {
 
              */
+            // TODO !entrycounter.isempty do jedengo ifa
             if (!entryCounter.isEmpty() && Collections.min(entryCounter.values()) == 0) {
                 // System.out.println(Thread.currentThread().getName() + " No entries");
                 Semaphore meWaitingForEntry = new Semaphore(0);
@@ -221,7 +222,7 @@ public class WorkshopImplemented implements Workshop {
             // TODO handle null pointer exceptions
             isAvailableToSeatAt.replace(wid, false); // The current user is entering and later will call use()
             mutexMyWorkplace.release();
-            // System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat RELEASED");
+            System.out.println(Thread.currentThread().getName() + " going to seat at " + wid + "\t ENTRY");
 
             return availableWorkplaces.get(wid);
         } catch (InterruptedException e) {
@@ -233,6 +234,7 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
+        System.out.println("SWITCHING\t\t" + Thread.currentThread().getName());
         try {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexEntryCounter.acquire();
@@ -302,6 +304,7 @@ public class WorkshopImplemented implements Workshop {
                     howManyWaitForASeat.compute(wid, (key, val) -> --val);
                 }
 
+                System.out.println(Thread.currentThread().getName() + " is going to seat at " + wid + "\t\t SWITCH");
                 // TODO Move to outer? for both same and not same
                 // Now the user is going to seat at and then perform use()
                 isAvailableToSeatAt.replace(wid, false);
@@ -326,7 +329,7 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public void leave() {
-        // System.out.println("LEAVING " + Thread.currentThread().getName());
+        System.out.println("LEAVING " + Thread.currentThread().getName());
         // After use from actual workplace
         Long currentThreadId = Thread.currentThread().getId();
         WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);

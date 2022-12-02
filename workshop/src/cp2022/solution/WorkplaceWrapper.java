@@ -193,9 +193,9 @@ public class WorkplaceWrapper extends Workplace {
                 mutexMyActualWorkplace.release();
             }
 
-            // System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE");
+            System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE " + actualWorkplace.get(currentThreadId));
             originalWorkplace.use();
-            // System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE");
+            System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE " + actualWorkplace.get(currentThreadId));
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
