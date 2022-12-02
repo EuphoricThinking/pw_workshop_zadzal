@@ -147,6 +147,34 @@ public class WorkplaceWrapper extends Workplace {
                     mutexMyPreviousWorkplace.release();
                 }
 
+                // TODO moved below
+                /*
+                Semaphore mutexMyActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
+                mutexMyActualWorkplace.acquire();
+
+                // Checks whether use() is available at the actual workplace (i.e. the previous user
+                // has not completed their switchTo()
+                if (!isAvailableToUse.get(myActualWorkplace)) {
+                    howManyWaitToUse.compute(myActualWorkplace, (key, val) -> ++val);
+                    Semaphore waitForActual = waitToUse.get(myActualWorkplace);
+                    mutexMyActualWorkplace.release();
+
+                    waitForActual.acquire();
+
+                    howManyWaitToUse.compute(myActualWorkplace, (key, val) -> --val);
+                }
+
+                mutexMyActualWorkplace.release();
+                 */
+            }
+
+            // TODO added
+            // If I have just entered, I have to check, whether it is possible to use()
+            Boolean ifHasJustEntered = (hasJustEntered.remove(currentThreadId) != null); // null if not mapped
+            // if (hasJustEntered.get(currentThreadId) != null || previousWorkplace != actualWorkplace) {// The map contains the key
+            if (ifHasJustEntered || previousWorkplace != actualWorkplace) {
+                // hasJustEntered.remove(currentThreadId);
+
                 Semaphore mutexMyActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
                 mutexMyActualWorkplace.acquire();
 
