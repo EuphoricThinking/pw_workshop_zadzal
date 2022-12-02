@@ -190,6 +190,9 @@ public class WorkplaceWrapper extends Workplace {
                     howManyWaitToUse.compute(myActualWorkplace, (key, val) -> --val);
                 }
 
+                // TODO added
+                isAvailableToUse.replace(myActualWorkplace, false);
+
                 mutexMyActualWorkplace.release();
             }
 
