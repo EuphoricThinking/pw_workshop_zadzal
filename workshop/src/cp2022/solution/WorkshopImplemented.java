@@ -144,9 +144,14 @@ public class WorkshopImplemented implements Workshop {
             mutexEntryCounter.acquire();
 
             // System.out.println(currentThreadId + " " + Thread.currentThread().getName() + " ENTRY " + maxEntries + " " + 2*maxEntries);
+            // TODO changed
+            /*
             entryCounter.putIfAbsent(currentThreadId, maxEntries); // TODO move before mutex?
             long minimumPossibleEntries = Collections.min(entryCounter.values());
             if (minimumPossibleEntries == 0) {
+
+             */
+            if (!entryCounter.isEmpty() && Collections.min(entryCounter.values()) == 0) {
                 // System.out.println(Thread.currentThread().getName() + " No entries");
                 Semaphore meWaitingForEntry = new Semaphore(0);
                 waitForEntry.add(meWaitingForEntry);
@@ -172,7 +177,11 @@ public class WorkshopImplemented implements Workshop {
              */
             }
             // TODO Added from entry -> trying without else clause
-            // entryCounter.replaceAll((key, val) -> --val);
+            if (!entryCounter.isEmpty()) {
+                entryCounter.replaceAll((key, val) -> --val);
+            }
+
+            entryCounter.putIfAbsent(currentThreadId, maxEntries); // TODO moved here
 
             mutexEntryCounter.release();
         } catch (InterruptedException e) {
