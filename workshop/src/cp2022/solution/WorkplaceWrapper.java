@@ -103,7 +103,7 @@ public class WorkplaceWrapper extends Workplace {
 
             Long currentThreadId = Thread.currentThread().getId();
 
-            System.out.println("1 SIZE: " + entryCounter.size() + " " + currentThreadId);
+            // System.out.println("1 SIZE: " + entryCounter.size() + " " + currentThreadId);
             // Task completed - remove 2*N constraint for a given thread
             entryCounter.remove(currentThreadId);
 
@@ -114,7 +114,7 @@ public class WorkplaceWrapper extends Workplace {
                 entryCounter.replaceAll((key, val) -> --val); // val  - 1L
             }
 
-            System.out.println("2 SIZE: " + entryCounter.size() + " " + currentThreadId);
+            // System.out.println("2 SIZE: " + entryCounter.size() + " " + currentThreadId);
             // long minimumPossibleEntries = Collections.min(entryCounter.values());
 
             // 2*N is satisfied and there are users waiting for entry
@@ -162,9 +162,9 @@ public class WorkplaceWrapper extends Workplace {
                 mutexMyActualWorkplace.release();
             }
 
-            System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE");
+            // System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE");
             originalWorkplace.use();
-            System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE");
+            // System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE");
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
