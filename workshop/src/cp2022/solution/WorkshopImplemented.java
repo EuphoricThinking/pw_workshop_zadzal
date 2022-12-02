@@ -71,16 +71,16 @@ public class WorkshopImplemented implements Workshop {
             availableWorkplaces.putIfAbsent(place.getId(),
                     new WorkplaceWrapper(place.getId(), place,
                             entryCounter,
-            actualWorkplace,
-            previousWorkplace,
-            hasJustEntered,
-            isAvailableToUse,
-            mutexEntryCounter,
-            waitForEntry,
-            mutexWorkplaceData,
-            mutexWaitForASeat,
-            howManyWaitToUse,
-            waitToUse));
+                            actualWorkplace,
+                            previousWorkplace,
+                            hasJustEntered,
+                            isAvailableToUse,
+                            mutexEntryCounter,
+                            waitForEntry,
+                            mutexWorkplaceData,
+                            mutexWaitForASeat,
+                            howManyWaitToUse,
+                            waitToUse));
         }
     }
 
@@ -223,6 +223,8 @@ public class WorkshopImplemented implements Workshop {
             isAvailableToSeatAt.replace(wid, false); // The current user is entering and later will call use()
             mutexMyWorkplace.release();
             System.out.println(Thread.currentThread().getName() + " going to seat at " + wid + "\t ENTRY");
+            System.out.println("\t\tENTER " + actualWorkplace.get(currentThreadId) + " by " + Thread.currentThread().getName()  + " use: " +
+                    isAvailableToUse.get(actualWorkplace.get(currentThreadId)) + " sit: " + isAvailableToSeatAt.get(actualWorkplace.get(currentThreadId)));
 
             return availableWorkplaces.get(wid);
         } catch (InterruptedException e) {
@@ -234,7 +236,10 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
-        System.out.println("SWITCHING\t\t" + Thread.currentThread().getName());
+        System.out.println("SWITCHING\t\t" + Thread.currentThread().getName() + " to " + wid);
+        System.out.println("\tSWITCH from " + actualWorkplace.get(Thread.currentThread().getId()) + " by " + Thread.currentThread().getName()  + " use: " +
+                isAvailableToUse.get(actualWorkplace.get(Thread.currentThread().getId())) + " sit: " + isAvailableToSeatAt.get(actualWorkplace.get(Thread.currentThread().getId())));
+
         try {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexEntryCounter.acquire();
@@ -305,6 +310,8 @@ public class WorkshopImplemented implements Workshop {
                 }
 
                 System.out.println(Thread.currentThread().getName() + " is going to seat at " + wid + "\t\t SWITCH");
+                System.out.println("\tSWITCH from " + actualWorkplace.get(currentThreadId) + " by " + Thread.currentThread().getName()  + " use: " +
+                        isAvailableToUse.get(actualWorkplace.get(currentThreadId)) + " sit: " + isAvailableToSeatAt.get(actualWorkplace.get(currentThreadId)));
                 // TODO Move to outer? for both same and not same
                 // Now the user is going to seat at and then perform use()
                 isAvailableToSeatAt.replace(wid, false);
