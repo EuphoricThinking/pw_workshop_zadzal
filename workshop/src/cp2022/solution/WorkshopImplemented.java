@@ -110,8 +110,9 @@ public class WorkshopImplemented implements Workshop {
     }
 
     public WorkshopImplemented(Collection<Workplace> workplaces) {
+        this.maxEntries = 2*workplaces.size() - 1; //TODO experiment
         constructorDataInitialization(workplaces);
-        this.maxEntries = workplaces.size();
+
         // System.out.println("maxEntres: " + this.maxEntries + " doubled: " + 2*this.maxEntries);
 
         // FIXME remove
@@ -143,7 +144,7 @@ public class WorkshopImplemented implements Workshop {
             mutexEntryCounter.acquire();
 
             // System.out.println(currentThreadId + " " + Thread.currentThread().getName() + " ENTRY " + maxEntries + " " + 2*maxEntries);
-            entryCounter.putIfAbsent(currentThreadId, 2*maxEntries); // TODO move before mutex?
+            entryCounter.putIfAbsent(currentThreadId, maxEntries); // TODO move before mutex?
             long minimumPossibleEntries = Collections.min(entryCounter.values());
             if (minimumPossibleEntries == 0) {
                 // System.out.println(Thread.currentThread().getName() + " No entries");
@@ -223,7 +224,7 @@ public class WorkshopImplemented implements Workshop {
 
             // System.out.println(Thread.currentThread().getName() + " SWITCH entry acquired");
 
-            entryCounter.putIfAbsent(Thread.currentThread().getId(), 2 * maxEntries);
+            entryCounter.putIfAbsent(Thread.currentThread().getId(), maxEntries);
 
             mutexEntryCounter.release();
         } catch (InterruptedException e) {
