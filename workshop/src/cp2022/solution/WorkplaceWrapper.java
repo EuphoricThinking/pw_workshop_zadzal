@@ -167,34 +167,11 @@ public class WorkplaceWrapper extends Workplace {
                 mutexWaitForASeatAndEntryCounter.release();
             }
 
-            // TODO going to move to entry
-            // Check if after enter()
-            /*
-            if (hasJustEntered.get(currentThreadId) != null) { // The map contains the key
-                hasJustEntered.remove(currentThreadId);
-
-                entryCounter.replaceAll((key, val) -> --val); // val  - 1L
-            }
-            */
-
-            // System.out.println("2 SIZE: " + entryCounter.size() + " " + currentThreadId);
-            // long minimumPossibleEntries = Collections.min(entryCounter.values());
-
-            // 2*N is satisfied and there are users waiting for entry
-            if (!entryCounter.isEmpty() && Collections.min(entryCounter.values()) > 0 && !waitForEntry.isEmpty()) {
-                Semaphore firstInQueue = waitForEntry.remove();
-                // TODO fix mutex sharing
-                firstInQueue.release();
-            }
-            else {
-                mutexEntryCounter.release();
-            }
-
             // If the workplace has been changed - enable use() for another users
             WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
-            if (previousWorkplace != actualWorkplace) {
-                Semaphore mutexMyPreviousWorkplace = mutexWaitForASeat.get(myPreviousWorkplace);
+            if (myPreviousWorkplace != myActualWorkplace) {
+                Semaphore mutexMyPreviousWorkplace = mutexWaitToUse.get(myPreviousWorkplace);
 
                 mutexMyPreviousWorkplace.acquire();
 
@@ -207,7 +184,7 @@ public class WorkplaceWrapper extends Workplace {
                     mutexMyPreviousWorkplace.release();
                 }
 
-                Semaphore mutexMyActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
+                Semaphore mutexMyActualWorkplace = mutexWaitToUse.get(myActualWorkplace);
                 mutexMyActualWorkplace.acquire();
 
                 // Checks whether use() is available at the actual workplace (i.e. the previous user
