@@ -6,6 +6,7 @@ import cp2022.base.WorkplaceId;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
@@ -13,7 +14,7 @@ public class WorkplaceWrapper extends Workplace {
     private final Workplace originalWorkplace;
 
     // Counter of possible number of entries to satisfy 2*N rule: <ThreadId, leftEntries>
-    private final HashMap<Long, Long> entryCounter;
+    private final LinkedHashMap<Long, Long> entryCounter;
 
     /* Every entry is changed only by a single thread, whose id is the key in a map */
     // Actual workplace a given thread is seated at: <ThreadId, WorkplaceId>
@@ -27,25 +28,29 @@ public class WorkplaceWrapper extends Workplace {
 
     /* Workplace data */
     // Indicates whether the user can seat at the given workplace
-//    private final ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToSeatAt;
+    private final ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToSeatAt;
     // Idicates whether the user can start using (call use()) at the given workplace
     private final ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse;
 
     /* Synchronization of the counter of possible number of entries to satisfy 2*N rule */
-    private Semaphore mutexEntryCounter;
-    // private long howManyWaitForEntry;
-    private ArrayDeque<Semaphore> waitForEntry; // FIFO semaphore
+    private final Semaphore mutexWaitForASeatAndEntryCounter;
+    //    private Long howManyWaitForEntry = 0L;
+//    private Semaphore waitForEntry = new Semaphore(0, true); // FIFO semaphore
+    // Entry semaphores
+    // private final ArrayDeque<Semaphore> waitForEntry = new ArrayDeque<>();
+    private final LinkedHashMap<Long, Semaphore> waitForEntry;
 
     /* Synchronization of the access to the workplace data */
     // private Semaphore mutexWorkplaceData = new Semaphore(1);
-    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData;
+    // private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData = new ConcurrentHashMap<>();
 
     /* Synchronization of the access to the seat at the given workplace
      *  Mutex protects also workplace data isAvailableToSeat
      * */
     // private Semaphore mutexWaitForSeat = new Semaphore(1);
     // private long howManyWaitForSeat = 0;
-    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeat;
+    // private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeatAndEntry = new ConcurrentHashMap<>();
+    // For switchTo()
 //    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat;
 //    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat;
 
@@ -54,25 +59,25 @@ public class WorkplaceWrapper extends Workplace {
      * */
     // private Semaphore mutexWaitToUse = new Semaphore(1);
     // private long howManyWaitToUse = 0;
-//    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse;
+    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse;
     private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse;
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse;
 
 
     protected WorkplaceWrapper(WorkplaceId id, Workplace original,
-                               HashMap<Long, Long> entryCounter,
-                               ConcurrentHashMap<Long, WorkplaceId> actualWorkplace,
-                               ConcurrentHashMap<Long, WorkplaceId> previousWorkplace,
-                               ConcurrentHashMap<Long, Boolean> hasJustEntered,
-//                               ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToSeatAt,
-                               ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse,
-                               Semaphore mutexEntryCounter,
-//                               Long howManyWaitForEntry,
-                               ArrayDeque<Semaphore> waitForEntry,
-                               ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData,
-                               ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeat,
-                               ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse,
-                               ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse) {
+                                LinkedHashMap<Long, Long> entryCounter,
+                                ConcurrentHashMap<Long, WorkplaceId> actualWorkplace,
+                                ConcurrentHashMap<Long, WorkplaceId> previousWorkplace,
+                                ConcurrentHashMap<Long, Boolean> hasJustEntered,
+                                ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToSeatAt,
+                                ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse,
+                                Semaphore mutexWaitForASeatAndEntryCounter,
+                                LinkedHashMap<Long, Semaphore> waitForEntry,
+//                                ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat,
+//                                ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat,
+                                ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse,
+                                ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse,
+                                ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse) {
         super(id);
 
         this.originalWorkplace = original;
@@ -81,15 +86,16 @@ public class WorkplaceWrapper extends Workplace {
         this.actualWorkplace = actualWorkplace;
         this.previousWorkplace = previousWorkplace;
         this.hasJustEntered = hasJustEntered;
-//        this.isAvailableToSeatAt = isAvailableToSeatAt;
+        this.isAvailableToSeatAt = isAvailableToSeatAt;
         this.isAvailableToUse = isAvailableToUse;
-        this.mutexEntryCounter = mutexEntryCounter;
+        this.mutexWaitForASeatAndEntryCounter = mutexWaitForASeatAndEntryCounter;
 //        this.howManyWaitForEntry = howManyWaitForEntry;
         this.waitForEntry = waitForEntry;
-        this.mutexWorkplaceData = mutexWorkplaceData;
-        this.mutexWaitForASeat = mutexWaitForASeat;
+//        this.howManyWaitForASeat = howManyWaitForASeat;
+//        this.waitForSeat = waitForSeat;
         this.howManyWaitToUse = howManyWaitToUse;
         this.waitToUse = waitToUse;
+        this.mutexWaitToUse = mutexWaitToUse;
     }
 
     @Override

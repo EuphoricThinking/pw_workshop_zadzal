@@ -14,7 +14,8 @@ public class WorkshopImplemented implements Workshop {
     // Read-only map of wrapped workplaces
     private final ConcurrentHashMap<WorkplaceId, WorkplaceWrapper> availableWorkplaces = new ConcurrentHashMap<>();
     // Counter of possible number of entries to satisfy 2*N rule: <ThreadId, leftEntries>
-    private final HashMap<Long, Long> entryCounter = new HashMap<>();
+    // TODOD serves as a queue
+    private final LinkedHashMap<Long, Long> entryCounter = new LinkedHashMap<>();
 
     /* Every entry is changed only by a single thread, whose id is the key in a map */
     // Actual workplace a given thread is seated at: <ThreadId, WorkplaceId>
@@ -33,21 +34,24 @@ public class WorkshopImplemented implements Workshop {
     private final ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse = new ConcurrentHashMap<>();
 
     /* Synchronization of the counter of possible number of entries to satisfy 2*N rule */
-    private Semaphore mutexEntryCounter = new Semaphore(1);
+    private final Semaphore mutexWaitForASeatAndEntryCounter = new Semaphore(1);
 //    private Long howManyWaitForEntry = 0L;
 //    private Semaphore waitForEntry = new Semaphore(0, true); // FIFO semaphore
-    private final ArrayDeque<Semaphore> waitForEntry = new ArrayDeque<>();
+    // Entry semaphores
+    // private final ArrayDeque<Semaphore> waitForEntry = new ArrayDeque<>();
+    private final LinkedHashMap<Long, Semaphore> waitForEntry = new LinkedHashMap<>();
 
     /* Synchronization of the access to the workplace data */
     // private Semaphore mutexWorkplaceData = new Semaphore(1);
-    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData = new ConcurrentHashMap<>();
+    // private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData = new ConcurrentHashMap<>();
 
     /* Synchronization of the access to the seat at the given workplace
     *  Mutex protects also workplace data isAvailableToSeat
     * */
     // private Semaphore mutexWaitForSeat = new Semaphore(1);
     // private long howManyWaitForSeat = 0;
-    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeat = new ConcurrentHashMap<>();
+    // private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeatAndEntry = new ConcurrentHashMap<>();
+    // For switchTo()
     private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat = new ConcurrentHashMap<>();
 
@@ -71,10 +75,10 @@ public class WorkshopImplemented implements Workshop {
             previousWorkplace,
             hasJustEntered,
             isAvailableToUse,
-            mutexEntryCounter,
+                            mutexWaitForASeatAndEntryCounter,
             waitForEntry,
             mutexWorkplaceData,
-            mutexWaitForASeat,
+                            mutexWaitForASeatAndEntry,
             howManyWaitToUse,
             waitToUse));
         }
@@ -97,7 +101,7 @@ public class WorkshopImplemented implements Workshop {
             howManyWaitToUse.putIfAbsent(placeId, 0L);
 
             mutexWaitToUse.putIfAbsent(placeId, new Semaphore(1, true));
-            mutexWaitForASeat.putIfAbsent(placeId, new Semaphore(1, true));
+            mutexWaitForASeatAndEntry.putIfAbsent(placeId, new Semaphore(1, true));
 
 
         }
@@ -141,7 +145,7 @@ public class WorkshopImplemented implements Workshop {
 
         // Check whether entry is possible
         try {
-            mutexEntryCounter.acquire();
+            mutexWaitForASeatAndEntryCounter.acquire();
 
             // System.out.println(currentThreadId + " " + Thread.currentThread().getName() + " ENTRY " + maxEntries + " " + 2*maxEntries);
             // TODO changed
@@ -155,7 +159,7 @@ public class WorkshopImplemented implements Workshop {
                 // System.out.println(Thread.currentThread().getName() + " No entries");
                 Semaphore meWaitingForEntry = new Semaphore(0);
                 waitForEntry.add(meWaitingForEntry);
-                mutexEntryCounter.release();
+                mutexWaitForASeatAndEntryCounter.release();
 
                 // The reference is remembered and the semaphore is pushed in the correct order
                 meWaitingForEntry.acquire();
@@ -183,7 +187,7 @@ public class WorkshopImplemented implements Workshop {
 
             entryCounter.putIfAbsent(currentThreadId, maxEntries); // TODO moved here
 
-            mutexEntryCounter.release();
+            mutexWaitForASeatAndEntryCounter.release();
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
@@ -193,7 +197,7 @@ public class WorkshopImplemented implements Workshop {
         // therefore entryCounter is not updated upon the given thread entry completion,
         // confirmed at the beginning of decorative use() implementation.
         try {
-            Semaphore mutexMyWorkplace = mutexWaitForASeat.get(wid);
+            Semaphore mutexMyWorkplace = mutexWaitForASeatAndEntry.get(wid);
 
             // System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat");
             // We need concurrent map to safely access particular workshop data,
@@ -231,13 +235,13 @@ public class WorkshopImplemented implements Workshop {
     public Workplace switchTo(WorkplaceId wid) {
         try {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
-            mutexEntryCounter.acquire();
+            mutexWaitForASeatAndEntryCounter.acquire();
 
             // System.out.println(Thread.currentThread().getName() + " SWITCH entry acquired");
 
             entryCounter.putIfAbsent(Thread.currentThread().getId(), maxEntries);
 
-            mutexEntryCounter.release();
+            mutexWaitForASeatAndEntryCounter.release();
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
@@ -256,7 +260,7 @@ public class WorkshopImplemented implements Workshop {
         // wid is an ID of the workplace I'm going to change to
         // I have NOT changed that workplace yet
         if (myActualWorkplace != wid) { // TODO changed from my previous workplace
-            Semaphore mutexMyActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
+            Semaphore mutexMyActualWorkplace = mutexWaitForASeatAndEntry.get(myActualWorkplace);
 
             // Updates information about my previous workplace
             try {
@@ -279,7 +283,7 @@ public class WorkshopImplemented implements Workshop {
 
             // System.out.println(Thread.currentThread().getName() + " " + isAvailableToSeatAt.get(myPreviousWorkplace) + " " + myPreviousWorkplace);
 
-            Semaphore mutexMyDemandedWorkplace = mutexWaitForASeat.get(wid);
+            Semaphore mutexMyDemandedWorkplace = mutexWaitForASeatAndEntry.get(wid);
 
             // Trying to reach the next workplace
             try {
@@ -328,7 +332,7 @@ public class WorkshopImplemented implements Workshop {
         WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
 
         // System.out.println("LEAVING actual workplace");
-        Semaphore mutexActualWorkplace = mutexWaitForASeat.get(myActualWorkplace);
+        Semaphore mutexActualWorkplace = mutexWaitForASeatAndEntry.get(myActualWorkplace);
 
 
         try {
