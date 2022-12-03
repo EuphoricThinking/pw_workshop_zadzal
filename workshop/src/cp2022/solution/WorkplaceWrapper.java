@@ -101,72 +101,9 @@ public class WorkplaceWrapper extends Workplace {
 
         // The switchTo() or entry() is finished
         try {
-            // Update entry 2*N constraints
-            mutexWaitForASeatAndEntryCounter.acquire();
-
             Long currentThreadId = Thread.currentThread().getId();
 
-            // System.out.println("1 SIZE: " + entryCounter.size() + " " + currentThreadId);
-            // Task completed - remove 2*N constraint for a given thread
-            entryCounter.remove(currentThreadId);
-
-            // Let other users in if workplaces are available
-            Iterator<Long> counterIterator = entryCounter.keySet().iterator();
-            Long queuedThreadId;
-
-            // TODO add information whther shared
-            boolean isMutexShared = false;
-            // If there is a semaphore in a queue, then there must be an entry in entryCounter
-            if (counterIterator.hasNext()) {
-                // If the first one must enter
-                if (entryCounter.get((queuedThreadId = counterIterator.next())) == 0) {
-                    // Check if the first one wants to enter (queued to enter)
-                    // and its seat is available
-                    Semaphore waitingToEnterSingle;
-                    if (isAvailableToSeatAt.get(actualWorkplace.get(queuedThreadId))
-                        && ((waitingToEnterSingle = waitForEntry.remove(queuedThreadId)) != null)) {
-
-                            // Let that thread enter
-                            isMutexShared = true;
-
-                            waitingToEnterSingle.release(); // Share mutex
-                    }
-                    // else: no one can enter
-//                    else {
-//                        // No-one can enter
-//                        // mutexWaitForASeatAndEntryCounter.release();
-//                    }
-                }
-                else {
-                    // Late users can enter, as the queue is processed from the first entry according to insertion order
-                    Iterator<Long> queuedLaterTriedEntry = waitForEntry.keySet().iterator();
-                    boolean foundWorkplace = false;
-
-                    while (queuedLaterTriedEntry.hasNext() && !foundWorkplace) {
-                        queuedThreadId = queuedLaterTriedEntry.next();
-                        WorkplaceId demandedWorkplace = actualWorkplace.get(queuedThreadId);
-
-                        if (isAvailableToSeatAt.get(demandedWorkplace)) {
-                            foundWorkplace = true;
-                        }
-                    }
-
-                    if (foundWorkplace) {
-                        Semaphore waitingToEnterSingle = waitForEntry.remove(queuedThreadId);
-                        isMutexShared = true;
-
-                        waitingToEnterSingle.release();
-                    }
-                    // no one of the queued has available workplace
-//                    else {
-//                        mutexWaitForASeatAndEntryCounter.release();
-//                    }
-                }
-            }
-
-            if (!isMutexShared) {
-                mutexWaitForASeatAndEntryCounter.release();
-            }
+            //pre-use
 
             WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
@@ -206,10 +143,82 @@ public class WorkplaceWrapper extends Workplace {
 
                 mutexMyActualWorkplace.release();
             }
-
+/************************/
             // System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE");
             originalWorkplace.use();
-            // System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE");
+            System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE");
+      /********************/
+
+            // post use
+            // Update entry 2*N constraints
+            mutexWaitForASeatAndEntryCounter.acquire();
+
+            // System.out.println("1 SIZE: " + entryCounter.size() + " " + currentThreadId);
+            // Task completed - remove 2*N constraint for a given thread
+            entryCounter.remove(currentThreadId);
+
+            // Let other users in if workplaces are available
+            Iterator<Long> counterIterator = entryCounter.keySet().iterator();
+            Long queuedThreadId;
+
+            System.out.println(Thread.currentThread().getName() + " USING " + actualWorkplace.get(currentThreadId));
+
+            // TODO add information whther shared
+            boolean isMutexShared = false;
+            // If there is a semaphore in a queue, then there must be an entry in entryCounter
+            if (counterIterator.hasNext()) {
+                // If the first one must enter
+                System.out.println("check next");
+                if (entryCounter.get((queuedThreadId = counterIterator.next())) == 0) {
+                    // Check if the first one wants to enter (queued to enter)
+                    // and its seat is available
+                    Semaphore waitingToEnterSingle;
+                    if (isAvailableToSeatAt.get(actualWorkplace.get(queuedThreadId))
+                            && ((waitingToEnterSingle = waitForEntry.remove(queuedThreadId)) != null)) {
+
+                        // Let that thread enter
+                        isMutexShared = true;
+
+                        waitingToEnterSingle.release(); // Share mutex
+                    }
+                    // else: no one can enter
+//                    else {
+//                        // No-one can enter
+//                        // mutexWaitForASeatAndEntryCounter.release();
+//                    }
+                }
+                else {
+                    // Late users can enter, as the queue is processed from the first entry according to insertion order
+                    Iterator<Long> queuedLaterTriedEntry = waitForEntry.keySet().iterator();
+                    boolean foundWorkplace = false;
+
+                    while (queuedLaterTriedEntry.hasNext() && !foundWorkplace) {
+                        queuedThreadId = queuedLaterTriedEntry.next();
+                        WorkplaceId demandedWorkplace = actualWorkplace.get(queuedThreadId);
+
+                        if (isAvailableToSeatAt.get(demandedWorkplace)) {
+                            foundWorkplace = true;
+                        }
+                    }
+
+                    if (foundWorkplace) {
+                        Semaphore waitingToEnterSingle = waitForEntry.remove(queuedThreadId);
+                        isMutexShared = true;
+                        System.out.println("release");
+
+                        waitingToEnterSingle.release();
+                    }
+                    // no one of the queued has available workplace
+//                    else {
+//                        mutexWaitForASeatAndEntryCounter.release();
+//                    }
+                }
+            }
+
+            if (!isMutexShared) {
+                mutexWaitForASeatAndEntryCounter.release();
+            }
+
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }

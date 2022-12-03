@@ -145,6 +145,7 @@ public class WorkshopImplemented implements Workshop {
         hasJustEntered.put(currentThreadId, true);
         putActualAndPreviousWorkplace(wid, wid);
         entryCounter.put(currentThreadId, maxEntries);
+        System.out.println(Thread.currentThread().getName() + " wants to ENTER " + actualWorkplace.get(currentThreadId));
 
         // Check whether entry is possible
         try {
@@ -159,6 +160,7 @@ public class WorkshopImplemented implements Workshop {
                     mutexWaitForASeatAndEntryCounter.release();
 
                     // The reference is remembered and the semaphore is pushed in the correct order
+                System.out.println(Thread.currentThread().getName() + " wait at entry");
                     meWaitingForEntry.acquire();
             }
 
@@ -178,6 +180,7 @@ public class WorkshopImplemented implements Workshop {
             isAvailableToSeatAt.replace(wid, false);
 
             // entryCounter.remove(currentThreadId); //TODO changed; test iterator.remove
+            System.out.println(Thread.currentThread().getName() + " ENTERING " + actualWorkplace.get(currentThreadId));
 
             mutexWaitForASeatAndEntryCounter.release();
 
@@ -189,6 +192,7 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
+        System.out.println(Thread.currentThread().getName() + " SWITCHING to " + actualWorkplace.get(wid));
         try {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexWaitForASeatAndEntryCounter.acquire();
@@ -287,7 +291,7 @@ public class WorkshopImplemented implements Workshop {
 
         try {
             lastUsedWorkplace.acquire();
-            // System.out.println("LEAVING actual workplace acquired");
+            System.out.println(Thread.currentThread().getName() + "LEAVING");
 
             // It is impossible to use without entering, but now it is available for usage
             isAvailableToUse.replace(myActualWorkplace, true); // At most one at a given workplace
@@ -295,8 +299,9 @@ public class WorkshopImplemented implements Workshop {
 
             lastUsedWorkplace.release();
 
+            System.out.println("acquire entry");
             mutexWaitForASeatAndEntryCounter.acquire();
-
+            System.out.println("acquireD entry");
             // Others are allowed for entering
             if (howManyWaitForASeat.get(myActualWorkplace) > 0) {
                 howManyWaitForASeat.compute(myActualWorkplace, (key, val) -> --val); // TODO added
@@ -311,7 +316,7 @@ public class WorkshopImplemented implements Workshop {
 
             actualWorkplace.remove(currentThreadId);
             previousWorkplace.remove(currentThreadId);
-            // System.out.println("Removed id");
+            System.out.println("Removed id");
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
