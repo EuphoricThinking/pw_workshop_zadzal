@@ -71,16 +71,18 @@ public class WorkshopImplemented implements Workshop {
             availableWorkplaces.putIfAbsent(place.getId(),
                     new WorkplaceWrapper(place.getId(), place,
                             entryCounter,
-            actualWorkplace,
-            previousWorkplace,
-            hasJustEntered,
-            isAvailableToUse,
+                            actualWorkplace,
+                            previousWorkplace,
+                            hasJustEntered,
+                            isAvailableToSeatAt,
+                            isAvailableToUse,
                             mutexWaitForASeatAndEntryCounter,
-            waitForEntry,
-            mutexWorkplaceData,
-                            mutexWaitForASeatAndEntry,
-            howManyWaitToUse,
-            waitToUse));
+                            waitForEntry,
+//                                ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat,
+//                                ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat,
+                            mutexWaitToUse,
+                            howManyWaitToUse,
+                            waitToUse));
         }
     }
 
