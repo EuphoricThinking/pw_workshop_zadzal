@@ -3,10 +3,7 @@ package cp2022.solution;
 import cp2022.base.Workplace;
 import cp2022.base.WorkplaceId;
 
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
@@ -77,7 +74,7 @@ public class WorkplaceWrapper extends Workplace {
 //                                ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat,
                                 ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse,
                                 ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse,
-                                ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse) {
+                                ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse,) {
         super(id);
 
         this.originalWorkplace = original;
@@ -105,13 +102,54 @@ public class WorkplaceWrapper extends Workplace {
         // The switchTo() or entry() is finished
         try {
             // Update entry 2*N constraints
-            mutexEntryCounter.acquire();
+            mutexWaitForASeatAndEntryCounter.acquire();
 
             Long currentThreadId = Thread.currentThread().getId();
 
             // System.out.println("1 SIZE: " + entryCounter.size() + " " + currentThreadId);
             // Task completed - remove 2*N constraint for a given thread
             entryCounter.remove(currentThreadId);
+
+            // Let other users in if workplaces are available
+            Iterator<Long> counterIterator = entryCounter.keySet().iterator();
+            Long queuedThreadId;
+
+            if (counterIterator.hasNext()) {
+                // If the first one must enter
+                if (entryCounter.get((queuedThreadId = counterIterator.next())) == 0) {
+                    // Check if the first one wants to enter (has just enter contains that key)
+                    // and its seat is available
+                    if ((hasJustEntered.get(queuedThreadId) != null)
+                        && isAvailableToUse.get(actualWorkplace.get(queuedThreadId))) {
+                            // Let that thread entry
+                            Semaphore queuedToEnter = waitForEntry.remove(queuedThreadId);
+
+                            queuedToEnter.release(); // Share mutex
+                    }
+                    else {
+                        // No-one can enter
+                        mutexWaitForASeatAndEntryCounter.release();
+                    }
+                }
+                else {
+                    // Late users can enter, as the queue is processed from the first entry according to insertion order
+                    Iterator<Long> queuedLaterTriedEntry = waitForEntry.keySet().iterator();
+                    boolean foundWorkplace = false;
+
+                    while (queuedLaterTriedEntry.hasNext() && !foundWorkplace) {
+                        queuedThreadId = queuedLaterTriedEntry.next();
+                        WorkplaceId demandedWorkplace = actualWorkplace.get(queuedThreadId);
+
+                        if (isAvailableToUse.get(demandedWorkplace)) {
+                            foundWorkplace = true;
+                        }
+                    }
+
+                    if (foundWorkplace) {
+
+                    }
+                }
+            }
 
             // TODO going to move to entry
             // Check if after enter()
