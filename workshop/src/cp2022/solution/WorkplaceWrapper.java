@@ -114,17 +114,18 @@ public class WorkplaceWrapper extends Workplace {
             Iterator<Long> counterIterator = entryCounter.keySet().iterator();
             Long queuedThreadId;
 
+            // TODO add information whther shared
             if (counterIterator.hasNext()) {
                 // If the first one must enter
                 if (entryCounter.get((queuedThreadId = counterIterator.next())) == 0) {
-                    // Check if the first one wants to enter (has just enter contains that key)
+                    // Check if the first one wants to enter (queued to enter)
                     // and its seat is available
-                    if ((hasJustEntered.get(queuedThreadId) != null)
-                        && isAvailableToUse.get(actualWorkplace.get(queuedThreadId))) {
-                            // Let that thread entry
-                            Semaphore queuedToEnter = waitForEntry.remove(queuedThreadId);
+                    Semaphore waitingToEnterSingle;
+                    if (isAvailableToUse.get(actualWorkplace.get(queuedThreadId))
+                        && ((waitingToEnterSingle = waitForEntry.remove(queuedThreadId)) != null)) {
 
-                            queuedToEnter.release(); // Share mutex
+                            // Let that thread enter
+                            waitingToEnterSingle.release(); // Share mutex
                     }
                     else {
                         // No-one can enter
@@ -146,7 +147,11 @@ public class WorkplaceWrapper extends Workplace {
                     }
 
                     if (foundWorkplace) {
-
+                        Semaphore waitingToEnterSingle = waitForEntry.remove(queuedThreadId);
+                        waitingToEnterSingle.release();
+                    }
+                    else {
+                        mutexWaitForASeatAndEntryCounter.release();
                     }
                 }
             }
