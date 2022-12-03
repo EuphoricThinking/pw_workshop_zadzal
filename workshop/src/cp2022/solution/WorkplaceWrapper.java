@@ -74,7 +74,7 @@ public class WorkplaceWrapper extends Workplace {
 //                                ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat,
                                 ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse,
                                 ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse,
-                                ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse,) {
+                                ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse) {
         super(id);
 
         this.originalWorkplace = original;
@@ -167,14 +167,14 @@ public class WorkplaceWrapper extends Workplace {
                 mutexWaitForASeatAndEntryCounter.release();
             }
 
-            // If the workplace has been changed - enable use() for another users
             WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
+
+            // If the workplace has been changed - enable use() for another users
             if (myPreviousWorkplace != myActualWorkplace) {
                 Semaphore mutexMyPreviousWorkplace = mutexWaitToUse.get(myPreviousWorkplace);
 
                 mutexMyPreviousWorkplace.acquire();
-
                 // Enable to use the previous workplace
                 if (howManyWaitToUse.get(myPreviousWorkplace) > 0) {
                     waitToUse.get(myPreviousWorkplace).release();
@@ -183,12 +183,14 @@ public class WorkplaceWrapper extends Workplace {
                     isAvailableToUse.replace(myPreviousWorkplace, true);
                     mutexMyPreviousWorkplace.release();
                 }
+            }
 
+            // If I have just entered, I have to check, whether it is possible to use()
+            boolean ifHasJustEntered = (hasJustEntered.remove(currentThreadId) != null); // null if not mapped
+            if (ifHasJustEntered || myPreviousWorkplace != myActualWorkplace) {
                 Semaphore mutexMyActualWorkplace = mutexWaitToUse.get(myActualWorkplace);
                 mutexMyActualWorkplace.acquire();
 
-                // Checks whether use() is available at the actual workplace (i.e. the previous user
-                // has not completed their switchTo()
                 if (!isAvailableToUse.get(myActualWorkplace)) {
                     howManyWaitToUse.compute(myActualWorkplace, (key, val) -> ++val);
                     Semaphore waitForActual = waitToUse.get(myActualWorkplace);
@@ -198,6 +200,8 @@ public class WorkplaceWrapper extends Workplace {
 
                     howManyWaitToUse.compute(myActualWorkplace, (key, val) -> --val);
                 }
+
+                isAvailableToUse.replace(myActualWorkplace, false);
 
                 mutexMyActualWorkplace.release();
             }
