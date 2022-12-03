@@ -105,11 +105,19 @@ public class WorkplaceWrapper extends Workplace {
         // The switchTo() or entry() is finished
         try {
             Long currentThreadId = Thread.currentThread().getId();
-
             //pre-use
 
             WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
+
+            System.out.println(Thread.currentThread().getName() + " wants to \t\t\tuse " + myActualWorkplace);
+
+            mutexWaitForASeatAndEntryCounter.acquire();
+
+            entryCounter.remove(currentThreadId);
+
+            mutexWaitForASeatAndEntryCounter.release();
+
 
             // If the workplace has been changed - enable use() for another users
             if (myPreviousWorkplace != myActualWorkplace) {
