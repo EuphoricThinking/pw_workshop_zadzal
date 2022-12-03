@@ -152,7 +152,7 @@ public class WorkshopImplemented implements Workshop {
             Iterator<Long> counterIterator = entryCounter.keySet().iterator();
             Long queuedThreadId;
 
-            System.out.println(Thread.currentThread().getName() + " USING " + actualWorkplace.get(currentThreadId));
+            // System.out.println(Thread.currentThread().getName() + " cleanup " + actualWorkplace.get(currentThreadId));
 
             // TODO add information whther shared
             boolean isMutexShared = false;
@@ -267,7 +267,7 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
-        System.out.println(Thread.currentThread().getName() + " SWITCHING to " + actualWorkplace.get(Thread.currentThread().getId()));
+        System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid);
         try {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexWaitForASeatAndEntryCounter.acquire();
@@ -292,6 +292,9 @@ public class WorkshopImplemented implements Workshop {
             // Only current thread retrieves these values, but concurrent hashmap enables thread-safe
             // access for multiple threads
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
+
+            previousWorkplace.replace(currentThreadId, myActualWorkplace);
+            actualWorkplace.replace(currentThreadId, wid);
 
             // wid is an ID of the workplace I'm going to change to
             // I have NOT changed that workplace yet
@@ -335,8 +338,14 @@ public class WorkshopImplemented implements Workshop {
 
                 // Unique threads will change values at their associated keys,
                 // therefore in ConcurrentHashMap concurrent access is thread-safe
-                previousWorkplace.replace(currentThreadId, myActualWorkplace);
-                actualWorkplace.replace(currentThreadId, wid);
+                // TODO moved above
+//                previousWorkplace.replace(currentThreadId, myActualWorkplace);
+//                actualWorkplace.replace(currentThreadId, wid);
+            }
+            else {
+                System.out.println("same");
+                mutexWaitForASeatAndEntryCounter.release();
+                System.out.println("same released");
             }
 
             return availableWorkplaces.get(wid);
