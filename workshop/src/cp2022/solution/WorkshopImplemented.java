@@ -171,7 +171,8 @@ public class WorkshopImplemented implements Workshop {
             }
 
             // entrySet contains at least one key - ours, so remove() will delete the last returned key
-            iterateOverQueue.remove();
+            // iterateOverQueue.remove(); // TODO uncomment double removal?
+
             // entryCounter.putIfAbsent(currentThreadId, maxEntries); // TODO moved here
             // Indicate that the seat will be occupied
             isAvailableToSeatAt.replace(wid, false);

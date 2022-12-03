@@ -115,22 +115,26 @@ public class WorkplaceWrapper extends Workplace {
             Long queuedThreadId;
 
             // TODO add information whther shared
+            boolean isMutexShared = false;
             if (counterIterator.hasNext()) {
                 // If the first one must enter
                 if (entryCounter.get((queuedThreadId = counterIterator.next())) == 0) {
                     // Check if the first one wants to enter (queued to enter)
                     // and its seat is available
                     Semaphore waitingToEnterSingle;
-                    if (isAvailableToUse.get(actualWorkplace.get(queuedThreadId))
+                    if (isAvailableToSeatAt.get(actualWorkplace.get(queuedThreadId))
                         && ((waitingToEnterSingle = waitForEntry.remove(queuedThreadId)) != null)) {
 
                             // Let that thread enter
+                            isMutexShared = true;
+
                             waitingToEnterSingle.release(); // Share mutex
                     }
-                    else {
-                        // No-one can enter
-                        mutexWaitForASeatAndEntryCounter.release();
-                    }
+                    // else: no one can enter
+//                    else {
+//                        // No-one can enter
+//                        // mutexWaitForASeatAndEntryCounter.release();
+//                    }
                 }
                 else {
                     // Late users can enter, as the queue is processed from the first entry according to insertion order
@@ -141,19 +145,26 @@ public class WorkplaceWrapper extends Workplace {
                         queuedThreadId = queuedLaterTriedEntry.next();
                         WorkplaceId demandedWorkplace = actualWorkplace.get(queuedThreadId);
 
-                        if (isAvailableToUse.get(demandedWorkplace)) {
+                        if (isAvailableToSeatAt.get(demandedWorkplace)) {
                             foundWorkplace = true;
                         }
                     }
 
                     if (foundWorkplace) {
                         Semaphore waitingToEnterSingle = waitForEntry.remove(queuedThreadId);
+                        isMutexShared = true;
+
                         waitingToEnterSingle.release();
                     }
-                    else {
-                        mutexWaitForASeatAndEntryCounter.release();
-                    }
+                    // no one of the queued has available workplace
+//                    else {
+//                        mutexWaitForASeatAndEntryCounter.release();
+//                    }
                 }
+            }
+
+            if (!isMutexShared) {
+                mutexWaitForASeatAndEntryCounter.release();
             }
 
             // TODO going to move to entry
