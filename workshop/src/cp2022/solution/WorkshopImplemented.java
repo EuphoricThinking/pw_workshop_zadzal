@@ -279,27 +279,34 @@ public class WorkshopImplemented implements Workshop {
         // After use from actual workplace
         Long currentThreadId = Thread.currentThread().getId();
         WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
+        Semaphore lastUsedWorkplace = mutexWaitToUse.get(myActualWorkplace);
 
         // System.out.println("LEAVING actual workplace");
-        Semaphore mutexActualWorkplace = mutexWaitForASeatAndEntry.get(myActualWorkplace);
+        // Semaphore mutexActualWorkplace = mutexWaitForASeatAndEntry.get(myActualWorkplace);
 
 
         try {
-            mutexActualWorkplace.acquire();
+            lastUsedWorkplace.acquire();
             // System.out.println("LEAVING actual workplace acquired");
 
             // It is impossible to use without entering, but now it is available for usage
-            isAvailableToUse.replace(myActualWorkplace, true);
+            isAvailableToUse.replace(myActualWorkplace, true); // At most one at a given workplace
             // System.out.println("Allowed to use");
+
+            lastUsedWorkplace.release();
+
+            mutexWaitForASeatAndEntryCounter.acquire();
 
             // Others are allowed for entering
             if (howManyWaitForASeat.get(myActualWorkplace) > 0) {
+                howManyWaitForASeat.compute(myActualWorkplace, (key, val) -> --val); // TODO added
                 waitForSeat.get(myActualWorkplace).release();
             }
             else {
                 isAvailableToSeatAt.replace(myActualWorkplace, true);
-                mutexActualWorkplace.release();
             }
+
+            mutexWaitForASeatAndEntryCounter.release(); // The possibly woken up thread will not change any senstitive data
             // System.out.println("Allowed for entering");
 
             actualWorkplace.remove(currentThreadId);
