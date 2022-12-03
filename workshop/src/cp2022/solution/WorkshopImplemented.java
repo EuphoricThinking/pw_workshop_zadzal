@@ -150,14 +150,6 @@ public class WorkshopImplemented implements Workshop {
         try {
             mutexWaitForASeatAndEntryCounter.acquire();
 
-            // System.out.println(currentThreadId + " " + Thread.currentThread().getName() + " ENTRY " + maxEntries + " " + 2*maxEntries);
-            // TODO changed
-            /*
-            entryCounter.putIfAbsent(currentThreadId, maxEntries); // TODO move before mutex?
-            long minimumPossibleEntries = Collections.min(entryCounter.values());
-            if (minimumPossibleEntries == 0) {
-
-             */
             Iterator<Long> iterateOverQueue = entryCounter.keySet().iterator();
             if ((!iterateOverQueue.hasNext() && entryCounter.get(iterateOverQueue.next()) == 0)
                 || !isAvailableToSeatAt.get(wid)) {
@@ -172,55 +164,26 @@ public class WorkshopImplemented implements Workshop {
 
             iterateOverQueue = entryCounter.keySet().iterator();
             Long keyVal;
-            while (iterateOverQueue.hasNext() && (keyVal = iterateOverQueue.next()) != currentThreadId) {
+
+            // Decrease counter values up to our key
+            while (iterateOverQueue.hasNext() && !(keyVal = iterateOverQueue.next()).equals(currentThreadId)) { // TODO TEST this
                 entryCounter.put(keyVal, entryCounter.get(keyVal) - 1);
             }
 
+            // entrySet contains at least one key - ours, so remove() will delete the last returned key
+            iterateOverQueue.remove();
             // entryCounter.putIfAbsent(currentThreadId, maxEntries); // TODO moved here
+            // Indicate that the seat will be occupied
             isAvailableToSeatAt.replace(wid, false);
 
+            // entryCounter.remove(currentThreadId); //TODO changed; test iterator.remove
+
             mutexWaitForASeatAndEntryCounter.release();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("panic: unexpected thread interruption");
-        }
-
-        // When waken up after waiting for possibility to entry, the user has to wait for seat.
-        // However, before completing that, no more than 2*N threads can enter,
-        // therefore entryCounter is not updated upon the given thread entry completion,
-        // confirmed at the beginning of decorative use() implementation.
-        try {
-            Semaphore mutexMyWorkplace = mutexWaitForASeatAndEntry.get(wid);
-
-            // System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat");
-            // We need concurrent map to safely access particular workshop data,
-            // but mutex is used to synchronize related operations
-            mutexMyWorkplace.acquire();
-
-            // System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat ACQUIRED");
-            if (!isAvailableToSeatAt.get(wid)) {
-                howManyWaitForASeat.compute(wid, (key, val) -> ++val); // TODO does it work?
-                Semaphore mySeatSemaphore = waitForSeat.get(wid);
-                mutexMyWorkplace.release();
-
-                // System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat NOT AVAL " + wid.toString());
-                // System.out.println(Thread.currentThread().getName() + " Trying to SEAT ENTER");
-
-                mySeatSemaphore.acquire();
-
-                howManyWaitForASeat.compute(wid, (key, val) -> --val);
-            }
-
-            // TODO handle null pointer exceptions
-            isAvailableToSeatAt.replace(wid, false); // The current user is entering and later will call use()
-            mutexMyWorkplace.release();
-            // System.out.println(Thread.currentThread().getName() + " ENTRY wait for a seat RELEASED");
 
             return availableWorkplaces.get(wid);
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
-
-        // return null;
     }
 
     @Override
