@@ -150,8 +150,8 @@ public class WorkshopImplemented implements Workshop {
         try {
             mutexWaitForASeatAndEntryCounter.acquire();
 
-            Iterator<Long> iterateOverQueue = entryCounter.keySet().iterator();
-            if ((!iterateOverQueue.hasNext() && entryCounter.get(iterateOverQueue.next()) == 0)
+            Iterator<Long> firstElement = entryCounter.keySet().iterator();
+            if ((!firstElement.hasNext() && entryCounter.get(firstElement.next()) == 0)
                 || !isAvailableToSeatAt.get(wid)) {
                 // System.out.println(Thread.currentThread().getName() + " No entries");
                     Semaphore meWaitingForEntry = new Semaphore(0);
@@ -162,7 +162,7 @@ public class WorkshopImplemented implements Workshop {
                     meWaitingForEntry.acquire();
             }
 
-            iterateOverQueue = entryCounter.keySet().iterator();
+            Iterator<Long> iterateOverQueue = entryCounter.keySet().iterator();
             Long keyVal;
 
             // Decrease counter values up to our key
