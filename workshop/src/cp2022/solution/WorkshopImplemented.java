@@ -48,9 +48,9 @@ public class WorkshopImplemented implements Workshop {
     /* Synchronization of the access to the seat at the given workplace
     *  Mutex protects also workplace data isAvailableToSeat
     * */
-    // private Semaphore mutexWaitForSeat = new Semaphore(1);
-    // private long howManyWaitForSeat = 0;
-    // private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeatAndEntry = new ConcurrentHashMap<>();
+    private final Semaphore mutexWaitForSeat = new Semaphore(1);
+    private long howManyWaitForSeat = 0;
+    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeatAndEntry = new ConcurrentHashMap<>();
     // For switchTo()
     private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat = new ConcurrentHashMap<>();
@@ -193,24 +193,25 @@ public class WorkshopImplemented implements Workshop {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexWaitForASeatAndEntryCounter.acquire();
 
+            Long currentThreadId = Thread.currentThread().getId();
+
             // System.out.println(Thread.currentThread().getName() + " SWITCH entry acquired");
 
-            entryCounter.putIfAbsent(Thread.currentThread().getId(), maxEntries);
+            // entryCounter.put(Thread.currentThread().getId(), maxEntries);
+            entryCounter.put(currentThreadId, maxEntries);
 
-            mutexWaitForASeatAndEntryCounter.release();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("panic: unexpected thread interruption");
-        }
+            // mutexWaitForASeatAndEntryCounter.release(); // TODO add
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException("panic: unexpected thread interruption");
+//        }
 
         // Earlier assignment would require non-atomic retrieval of the value for getId()
         // and non-atomic assignment, then the assigned value would be used for putting the counter.
         // Retrieval without preceding assignment is slightly faster and indicates the demand
         // for switching as soon as it is possible.
-        Long currentThreadId = Thread.currentThread().getId();
 
         // Only current thread retrieves these values, but concurrent hashmap enables thread-safe
         // access for multiple threads
-        WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
         WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
 
         // wid is an ID of the workplace I'm going to change to
