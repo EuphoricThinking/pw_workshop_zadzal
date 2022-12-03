@@ -116,6 +116,7 @@ public class WorkplaceWrapper extends Workplace {
 
             // TODO add information whther shared
             boolean isMutexShared = false;
+            // If there is a semaphore in a queue, then there must be an entry in entryCounter
             if (counterIterator.hasNext()) {
                 // If the first one must enter
                 if (entryCounter.get((queuedThreadId = counterIterator.next())) == 0) {

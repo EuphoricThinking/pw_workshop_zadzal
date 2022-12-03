@@ -205,79 +205,71 @@ public class WorkshopImplemented implements Workshop {
 //            throw new RuntimeException("panic: unexpected thread interruption");
 //        }
 
-        // Earlier assignment would require non-atomic retrieval of the value for getId()
-        // and non-atomic assignment, then the assigned value would be used for putting the counter.
-        // Retrieval without preceding assignment is slightly faster and indicates the demand
-        // for switching as soon as it is possible.
+            // Earlier assignment would require non-atomic retrieval of the value for getId()
+            // and non-atomic assignment, then the assigned value would be used for putting the counter.
+            // Retrieval without preceding assignment is slightly faster and indicates the demand
+            // for switching as soon as it is possible.
 
-        // Only current thread retrieves these values, but concurrent hashmap enables thread-safe
-        // access for multiple threads
-        WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
+            // Only current thread retrieves these values, but concurrent hashmap enables thread-safe
+            // access for multiple threads
+            WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
 
-        // wid is an ID of the workplace I'm going to change to
-        // I have NOT changed that workplace yet
-        if (myActualWorkplace != wid) { // TODO changed from my previous workplace
-            Semaphore mutexMyActualWorkplace = mutexWaitForASeatAndEntry.get(myActualWorkplace);
+            // wid is an ID of the workplace I'm going to change to
+            // I have NOT changed that workplace yet
+            if (myActualWorkplace != wid) { // TODO changed from my previous workplace
 
-            // Updates information about my previous workplace
-            try {
-                mutexMyActualWorkplace.acquire();
-                // The user has not changed the workplace yet
-                isAvailableToUse.replace(myActualWorkplace, false); //TODO look at it, may be dangerous
-                //TODO is mutex needed? is it needed at all?
+                // Updates information about my previous workplace
 
                 // If another user wants to visit my previous workplace
+//                boolean areUsersWaitingForPrevious = howManyWaitForASeat.get(myActualWorkplace) > 0;
                 if (howManyWaitForASeat.get(myActualWorkplace) > 0) {
-                    waitForSeat.get(myActualWorkplace).release();
-                }
-                else {
+                    // tagged as occupied
+                    Semaphore previousWorkplace = waitForSeat.get(myActualWorkplace);
+                    howManyWaitForASeat.compute(myActualWorkplace, (key, val) -> --val);
+                    previousWorkplace.release(); // It will be released in B part, from where it does not need sensitive local variables
+//                if (areUsersWaitingForPrevious) {
+                    // The workplace is tagged as occupied
+//                    howManyWaitForASeat.compute(myActualWorkplace, (key, val) -> --val);
+                } else {
                     isAvailableToSeatAt.replace(myActualWorkplace, true);
-                    mutexMyActualWorkplace.release();
                 }
-            } catch (InterruptedException e) {
-                throw new RuntimeException("panic: unexpected thread interruption");
-            }
 
-            // System.out.println(Thread.currentThread().getName() + " " + isAvailableToSeatAt.get(myPreviousWorkplace) + " " + myPreviousWorkplace);
-
-            Semaphore mutexMyDemandedWorkplace = mutexWaitForASeatAndEntry.get(wid);
-
-            // Trying to reach the next workplace
-            try {
-                // System.out.println(Thread.currentThread().getName() + " DEMANDED trying to acquire");
-                mutexMyDemandedWorkplace.acquire();
-                // System.out.println(Thread.currentThread().getName() + " DEMANDED ACQUIRED");
-
+                /* B */
                 if (!isAvailableToSeatAt.get(wid)) {
                     howManyWaitForASeat.compute(wid, (key, val) -> ++val); // TODO does it work?
                     Semaphore myDemandedSeatSemaphore = waitForSeat.get(wid);
-                    mutexMyDemandedWorkplace.release();
+                    mutexWaitForASeatAndEntryCounter.release();
 
                     // System.out.println(Thread.currentThread().getName() + "Trying to SEAT SWITCH");
                     myDemandedSeatSemaphore.acquire();
 
-                    howManyWaitForASeat.compute(wid, (key, val) -> --val);
+                    // Only one thread will be released and only this one will change that value.
+                    // Concurrent access is safe for ConcurrentHashMap
+                    // howManyWaitForASeat.compute(wid, (key, val) -> --val); // TODO is it safe?
+                }
+                else {
+                    // Now the user is going to seat at and then perform use()
+                    isAvailableToSeatAt.replace(wid, false);
+
+                    mutexWaitForASeatAndEntryCounter.release();
                 }
 
-                // TODO Move to outer? for both same and not same
-                // Now the user is going to seat at and then perform use()
-                isAvailableToSeatAt.replace(wid, false);
-
-                mutexMyDemandedWorkplace.release();
-
-            } catch (InterruptedException e) {
-                throw new RuntimeException("panic: unexpected thread interruption");
+                // Unique threads will change values at their associated keys,
+                // therefore in ConcurrentHashMap concurrent access is thread-safe
+                previousWorkplace.replace(currentThreadId, myActualWorkplace);
+                actualWorkplace.replace(currentThreadId, wid);
             }
+
+            return availableWorkplaces.get(wid);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("panic: unexpected thread interruption");
         }
+
 
         // TODO Moved from wid != actual
         // Update the seat, because the user is guaranteed to enter the demanded workplace
         // putActualAndPreviousWorkplace(wid, myActualWorkplace);
         // // System.out.println(Thread.currentThread().getName() + " " + isAvailableToSeatAt.get(myPreviousWorkplace) + " " + myPreviousWorkplace);
-        previousWorkplace.replace(currentThreadId, myActualWorkplace);
-        actualWorkplace.replace(currentThreadId, wid);
-
-        return availableWorkplaces.get(wid);
        // return null;
     }
 
