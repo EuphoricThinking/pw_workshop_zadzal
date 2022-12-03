@@ -103,7 +103,7 @@ public class WorkshopImplemented implements Workshop {
             howManyWaitToUse.putIfAbsent(placeId, 0L);
 
             mutexWaitToUse.putIfAbsent(placeId, new Semaphore(1, true));
-            mutexWaitForASeatAndEntry.putIfAbsent(placeId, new Semaphore(1, true));
+//            mutexWaitForASeatAndEntry.putIfAbsent(placeId, new Semaphore(1, true));
 
 
         }
@@ -144,6 +144,7 @@ public class WorkshopImplemented implements Workshop {
         Long currentThreadId = Thread.currentThread().getId();
         hasJustEntered.put(currentThreadId, true);
         putActualAndPreviousWorkplace(wid, wid);
+        entryCounter.put(currentThreadId, maxEntries);
 
         // Check whether entry is possible
         try {
@@ -157,37 +158,26 @@ public class WorkshopImplemented implements Workshop {
             if (minimumPossibleEntries == 0) {
 
              */
-            if (!entryCounter.isEmpty() && Collections.min(entryCounter.values()) == 0) {
+            Iterator<Long> iterateOverQueue = entryCounter.keySet().iterator();
+            if ((!iterateOverQueue.hasNext() && entryCounter.get(iterateOverQueue.next()) == 0)
+                || !isAvailableToSeatAt.get(wid)) {
                 // System.out.println(Thread.currentThread().getName() + " No entries");
-                Semaphore meWaitingForEntry = new Semaphore(0);
-                waitForEntry.add(meWaitingForEntry);
-                mutexWaitForASeatAndEntryCounter.release();
+                    Semaphore meWaitingForEntry = new Semaphore(0);
+                    waitForEntry.put(currentThreadId, meWaitingForEntry);
+                    mutexWaitForASeatAndEntryCounter.release();
 
-                // The reference is remembered and the semaphore is pushed in the correct order
-                meWaitingForEntry.acquire();
-
-                // TODO I'm trying to keep the order, because otherwise the later would enter first
- /*               if (!entryCounter.isEmpty() && Collections.min(entryCounter.values()) > 0 && !waitForEntry.isEmpty()) {
-                    Semaphore firstInQueue = waitForEntry.remove();
-                    // TODO fix mutex sharing
-                    firstInQueue.release();
-                }
-                else {
-                    mutexEntryCounter.release();
-                }
-            }
-            else {
-                // System.out.println(Thread.currentThread().getName() + " More entries, release entry");
-                mutexEntryCounter.release();
-                // System.out.println(Thread.currentThread().getName() + " More entries, RELEASED entry");
-             */
-            }
-            // TODO Added from entry -> trying without else clause
-            if (!entryCounter.isEmpty()) {
-                entryCounter.replaceAll((key, val) -> --val);
+                    // The reference is remembered and the semaphore is pushed in the correct order
+                    meWaitingForEntry.acquire();
             }
 
-            entryCounter.putIfAbsent(currentThreadId, maxEntries); // TODO moved here
+            iterateOverQueue = entryCounter.keySet().iterator();
+            Long keyVal;
+            while (iterateOverQueue.hasNext() && (keyVal = iterateOverQueue.next()) != currentThreadId) {
+                entryCounter.put(keyVal, entryCounter.get(keyVal) - 1);
+            }
+
+            // entryCounter.putIfAbsent(currentThreadId, maxEntries); // TODO moved here
+            isAvailableToSeatAt.replace(wid, false);
 
             mutexWaitForASeatAndEntryCounter.release();
         } catch (InterruptedException e) {
