@@ -78,7 +78,7 @@ public class WorkshopImplemented implements Workshop {
                             isAvailableToUse,
                             mutexWaitForASeatAndEntryCounter,
                             waitForEntry,
-//                                ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat,
+                                howManyWaitForASeat,
 //                                ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat,
                             mutexWaitToUse,
                             howManyWaitToUse,
@@ -169,7 +169,7 @@ public class WorkshopImplemented implements Workshop {
 
                         // Let that thread enter
                         isMutexShared = true;
-                        System.out.println("freed");
+                      //System.out.println("freed");
 
                         waitingToEnterSingle.release(); // Share mutex
                     }
@@ -219,7 +219,7 @@ public class WorkshopImplemented implements Workshop {
         Long currentThreadId = Thread.currentThread().getId();
         hasJustEntered.put(currentThreadId, true);
         putActualAndPreviousWorkplace(wid, wid);
-      //System.out.println(Thread.currentThread().getName() + " wants to ENTER " + wid);
+        // System.out.println(Thread.currentThread().getName() + " wants to ENTER " + wid);
 
         // Check whether entry is possible
         try {
@@ -228,10 +228,10 @@ public class WorkshopImplemented implements Workshop {
             entryCounter.put(currentThreadId, maxEntries);
 
             Iterator<Long> firstElement = entryCounter.keySet().iterator();
-            System.out.println(Thread.currentThread().getName() + " ENTRY");
+          //System.out.println(Thread.currentThread().getName() + " ENTRY");
             if ((!firstElement.hasNext() && entryCounter.get(firstElement.next()) == 0)
                 || !isAvailableToSeatAt.get(wid)) {
-                System.out.println(Thread.currentThread().getName() + " No entries");
+              //System.out.println(Thread.currentThread().getName() + " No entries");
                     Semaphore meWaitingForEntry = new Semaphore(0);
                     waitForEntry.put(currentThreadId, meWaitingForEntry);
                     mutexWaitForASeatAndEntryCounter.release();
@@ -244,10 +244,10 @@ public class WorkshopImplemented implements Workshop {
             Iterator<Long> iterateOverQueue = entryCounter.keySet().iterator();
             Long keyVal;
             // Decrease counter values up to our key
-            System.out.println(Thread.currentThread().getName() + " ENTRY before iterate");
+          //System.out.println(Thread.currentThread().getName() + " ENTRY before iterate");
   //          int i = 0;
             while (iterateOverQueue.hasNext() && !(keyVal = iterateOverQueue.next()).equals(currentThreadId)) { // TODO TEST this
-             //   System.out.println(i + "iter");
+             // //System.out.println(i + "iter");
                 entryCounter.put(keyVal, entryCounter.get(keyVal) - 1);
             }
 
@@ -273,7 +273,7 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
-      //System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid);
+        System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid + " seat: " + isAvailableToSeatAt.get(wid));
         try {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexWaitForASeatAndEntryCounter.acquire();
@@ -305,6 +305,7 @@ public class WorkshopImplemented implements Workshop {
             // wid is an ID of the workplace I'm going to change to
             // I have NOT changed that workplace yet
             if (myActualWorkplace != wid) { // TODO changed from my previous workplace
+                // System.out.println(Thread.currentThread().getName() + " differs");
 
                 // Updates information about my previous workplace
 
@@ -312,9 +313,11 @@ public class WorkshopImplemented implements Workshop {
 //                boolean areUsersWaitingForPrevious = howManyWaitForASeat.get(myActualWorkplace) > 0;
                 if (howManyWaitForASeat.get(myActualWorkplace) > 0) {
                     // tagged as occupied
+                    //System.out.println(Thread.currentThread().getName() + " discovers, that his previous " + myActualWorkplace + " is awaited");
                     Semaphore previousWorkplace = waitForSeat.get(myActualWorkplace);
                     howManyWaitForASeat.compute(myActualWorkplace, (key, val) -> --val);
                     previousWorkplace.release(); // It will be released in B part, from where it does not need sensitive local variables
+                    //System.out.println(Thread.currentThread().getName() + " released " + myActualWorkplace);
 //                if (areUsersWaitingForPrevious) {
                     // The workplace is tagged as occupied
 //                    howManyWaitForASeat.compute(myActualWorkplace, (key, val) -> --val);
@@ -328,8 +331,9 @@ public class WorkshopImplemented implements Workshop {
                     Semaphore myDemandedSeatSemaphore = waitForSeat.get(wid);
                     mutexWaitForASeatAndEntryCounter.release();
 
-                    // System.out.println(Thread.currentThread().getName() + "Trying to SEAT SWITCH");
+                    System.out.println(Thread.currentThread().getName() + "Trying to SEAT SWITCH " + wid + " waits for s");
                     myDemandedSeatSemaphore.acquire();
+                    System.out.println(Thread.currentThread().getName() + "\t\tawoke");
 
                     // Only one thread will be released and only this one will change that value.
                     // Concurrent access is safe for ConcurrentHashMap

@@ -50,7 +50,7 @@ public class WorkplaceWrapper extends Workplace {
     // private long howManyWaitForSeat = 0;
     // private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeatAndEntry = new ConcurrentHashMap<>();
     // For switchTo()
-//    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat;
+    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat;
 //    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat;
 
     /* Synchronization of the permission to use (call use()) the given workplace
@@ -72,7 +72,7 @@ public class WorkplaceWrapper extends Workplace {
                                 ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse,
                                 Semaphore mutexWaitForASeatAndEntryCounter,
                                 LinkedHashMap<Long, Semaphore> waitForEntry,
-//                                ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat,
+                                ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat,
 //                                ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat,
                                 ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse,
                                 ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse,
@@ -91,7 +91,7 @@ public class WorkplaceWrapper extends Workplace {
         this.mutexWaitForASeatAndEntryCounter = mutexWaitForASeatAndEntryCounter;
 //        this.howManyWaitForEntry = howManyWaitForEntry;
         this.waitForEntry = waitForEntry;
-//        this.howManyWaitForASeat = howManyWaitForASeat;
+        this.howManyWaitForASeat = howManyWaitForASeat;
 //        this.waitForSeat = waitForSeat;
         this.howManyWaitToUse = howManyWaitToUse;
         this.waitToUse = waitToUse;
@@ -110,14 +110,16 @@ public class WorkplaceWrapper extends Workplace {
             WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
 
-          //System.out.println(Thread.currentThread().getName() + " wants to \t\t\tuse " + myActualWorkplace);
+          System.out.println(Thread.currentThread().getName() + " wants to \t\t\tuse " + myActualWorkplace);
 
             mutexWaitForASeatAndEntryCounter.acquire();
 
-            System.out.println(Thread.currentThread().getName() + " use removal");
-            entryCounter.remove(currentThreadId);
+          // System.out.println(Thread.currentThread().getName() + " use removal");
+            entryCounter.remove(currentThreadId);  // TODO add removal variable
 
             mutexWaitForASeatAndEntryCounter.release();
+
+            renderingWorkshop.checkIfEntryPossible();
 
 
             // If the workplace has been changed - enable use() for another users
@@ -142,6 +144,7 @@ public class WorkplaceWrapper extends Workplace {
                 mutexMyActualWorkplace.acquire();
 
                 if (!isAvailableToUse.get(myActualWorkplace)) {
+                    System.out.println(Thread.currentThread().getName() + " waits to use " + myActualWorkplace); //+ " waits for me: " + howManyWaitForASeat.get(myPreviousWorkplace));
                     howManyWaitToUse.compute(myActualWorkplace, (key, val) -> ++val);
                     Semaphore waitForActual = waitToUse.get(myActualWorkplace);
                     mutexMyActualWorkplace.release();
@@ -158,13 +161,13 @@ public class WorkplaceWrapper extends Workplace {
 /************************/
             // System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE");
             originalWorkplace.use();
-          //System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE");
+            System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE " + myActualWorkplace);
       /********************/
 
             // post use
             // Update entry 2*N constraints
 
-        renderingWorkshop.checkIfEntryPossible();
+        // renderingWorkshop.checkIfEntryPossible(); // TODO moved up
 
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
