@@ -110,7 +110,7 @@ public class WorkplaceWrapper extends Workplace {
             WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
 
-            System.out.println(Thread.currentThread().getName() + " wants to \t\t\tuse " + myActualWorkplace);
+          //System.out.println(Thread.currentThread().getName() + " wants to \t\t\tuse " + myActualWorkplace);
 
             mutexWaitForASeatAndEntryCounter.acquire();
 
@@ -157,7 +157,7 @@ public class WorkplaceWrapper extends Workplace {
 /************************/
             // System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE");
             originalWorkplace.use();
-            System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE");
+          //System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE");
       /********************/
 
             // post use

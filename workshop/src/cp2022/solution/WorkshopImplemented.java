@@ -219,7 +219,7 @@ public class WorkshopImplemented implements Workshop {
         hasJustEntered.put(currentThreadId, true);
         putActualAndPreviousWorkplace(wid, wid);
         entryCounter.put(currentThreadId, maxEntries);
-        System.out.println(Thread.currentThread().getName() + " wants to ENTER " + wid);
+      //System.out.println(Thread.currentThread().getName() + " wants to ENTER " + wid);
 
         // Check whether entry is possible
         try {
