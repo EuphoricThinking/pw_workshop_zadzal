@@ -169,6 +169,7 @@ public class WorkshopImplemented implements Workshop {
 
                         // Let that thread enter
                         isMutexShared = true;
+                        System.out.println("freed");
 
                         waitingToEnterSingle.release(); // Share mutex
                     }
@@ -218,17 +219,19 @@ public class WorkshopImplemented implements Workshop {
         Long currentThreadId = Thread.currentThread().getId();
         hasJustEntered.put(currentThreadId, true);
         putActualAndPreviousWorkplace(wid, wid);
-        entryCounter.put(currentThreadId, maxEntries);
       //System.out.println(Thread.currentThread().getName() + " wants to ENTER " + wid);
 
         // Check whether entry is possible
         try {
             mutexWaitForASeatAndEntryCounter.acquire();
 
+            entryCounter.put(currentThreadId, maxEntries);
+
             Iterator<Long> firstElement = entryCounter.keySet().iterator();
+            System.out.println(Thread.currentThread().getName() + " ENTRY");
             if ((!firstElement.hasNext() && entryCounter.get(firstElement.next()) == 0)
                 || !isAvailableToSeatAt.get(wid)) {
-                // System.out.println(Thread.currentThread().getName() + " No entries");
+                System.out.println(Thread.currentThread().getName() + " No entries");
                     Semaphore meWaitingForEntry = new Semaphore(0);
                     waitForEntry.put(currentThreadId, meWaitingForEntry);
                     mutexWaitForASeatAndEntryCounter.release();
@@ -240,11 +243,19 @@ public class WorkshopImplemented implements Workshop {
 
             Iterator<Long> iterateOverQueue = entryCounter.keySet().iterator();
             Long keyVal;
-
             // Decrease counter values up to our key
+            System.out.println(Thread.currentThread().getName() + " ENTRY before iterate");
+            int i = 0;
+           //  LinkedList<Long> toUpdate = new LinkedList<>();
             while (iterateOverQueue.hasNext() && !(keyVal = iterateOverQueue.next()).equals(currentThreadId)) { // TODO TEST this
+                System.out.println(i + "iter");
                 entryCounter.put(keyVal, entryCounter.get(keyVal) - 1);
+                // toUpdate.add(keyVal);
             }
+
+//            for (Long keyId: toUpdate) {
+//                entryCounter.put(keyId, entryCounter.get(keyId) - 1);
+//            }
 
             // entryCounter.remove(currentThreadId);
             // entrySet contains at least one key - ours, so remove() will delete the last returned key

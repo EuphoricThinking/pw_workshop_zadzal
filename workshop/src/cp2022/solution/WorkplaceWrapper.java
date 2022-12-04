@@ -114,6 +114,7 @@ public class WorkplaceWrapper extends Workplace {
 
             mutexWaitForASeatAndEntryCounter.acquire();
 
+            System.out.println(Thread.currentThread().getName() + " use removal");
             entryCounter.remove(currentThreadId);
 
             mutexWaitForASeatAndEntryCounter.release();
