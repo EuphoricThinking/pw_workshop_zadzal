@@ -34,25 +34,8 @@ public class WorkplaceWrapper extends Workplace {
     /* Synchronization of the counter of possible number of entries to satisfy 2*N rule */
     private final Semaphore mutexWaitForASeatAndEntryCounter;
 
-    /* Synchronization of the access to the workplace data */
-    // private Semaphore mutexWorkplaceData = new Semaphore(1);
-    // private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWorkplaceData = new ConcurrentHashMap<>();
 
-    /* Synchronization of the access to the seat at the given workplace
-     *  Mutex protects also workplace data isAvailableToSeat
-     * */
-    // private Semaphore mutexWaitForSeat = new Semaphore(1);
-    // private long howManyWaitForSeat = 0;
-    // private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeatAndEntry = new ConcurrentHashMap<>();
-    // For switchTo()
-    private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat;
-//    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat;
-
-    /* Synchronization of the permission to use (call use()) the given workplace
-     *  Mutex protects also workplace data isAvailableToSeat
-     * */
-    // private Semaphore mutexWaitToUse = new Semaphore(1);
-    // private long howManyWaitToUse = 0;
+    /* Synchronization of the permission to use (call use()) the given workplace */
     private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse;
     private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse;
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse;
@@ -66,7 +49,6 @@ public class WorkplaceWrapper extends Workplace {
                                 ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToSeatAt,
                                 ConcurrentHashMap<WorkplaceId, Boolean> isAvailableToUse,
                                 Semaphore mutexWaitForASeatAndEntryCounter,
-                                ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat,
                                 ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse,
                                 ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse,
                                 ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse) {
@@ -82,7 +64,6 @@ public class WorkplaceWrapper extends Workplace {
         this.isAvailableToSeatAt = isAvailableToSeatAt;
         this.isAvailableToUse = isAvailableToUse;
         this.mutexWaitForASeatAndEntryCounter = mutexWaitForASeatAndEntryCounter;
-        this.howManyWaitForASeat = howManyWaitForASeat;
         this.howManyWaitToUse = howManyWaitToUse;
         this.waitToUse = waitToUse;
         this.mutexWaitToUse = mutexWaitToUse;
@@ -154,9 +135,5 @@ public class WorkplaceWrapper extends Workplace {
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
         }
-    }
-
-    public WorkplaceId getIdName() {
-        return originalWorkplace.getId();
     }
 }
