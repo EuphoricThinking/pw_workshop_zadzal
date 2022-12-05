@@ -70,7 +70,6 @@ public class WorkshopImplemented implements Workshop {
                             isAvailableToSeatAt,
                             isAvailableToUse,
                             mutexWaitForASeatAndEntryCounter,
-                            waitForEntry,
                             howManyWaitForASeat,
                             mutexWaitToUse,
                             howManyWaitToUse,
