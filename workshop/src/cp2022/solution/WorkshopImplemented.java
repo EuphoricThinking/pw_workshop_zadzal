@@ -445,18 +445,26 @@ public class WorkshopImplemented implements Workshop {
 
           //System.out.println("acquire entry");
             mutexWaitForASeatAndEntryCounter.acquire();
+
+            whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
+            leavingEdges.replace(myActualWorkplace, null);
+
           //System.out.println("acquireD entry");
             // Others are allowed for entering
-            if (howManyWaitForASeat.get(myActualWorkplace) > 0) {
-                howManyWaitForASeat.compute(myActualWorkplace, (key, val) -> --val); // TODO added
-                waitForSeat.get(myActualWorkplace).release();
+            LinkedHashSet<Long> waitsForMyPlace = whoWaits_TOWARD_Workplace.get(myActualWorkplace);
+            Iterator<Long> iterateOverMyPlace = waitsForMyPlace.iterator();
+            if (iterateOverMyPlace.hasNext()) {
+                Long headId = iterateOverMyPlace.next();
+                Semaphore headSemaphore = usersSemaphoresForSwitchTo.get(headId);
+                iterateOverMyPlace.remove();
+
+                headSemaphore.release();
             }
             else {
                 isAvailableToSeatAt.replace(myActualWorkplace, true);
-            }
 
-            mutexWaitForASeatAndEntryCounter.release(); // The possibly woken up thread will not change any senstitive data
-            // System.out.println("Allowed for entering");
+                mutexWaitForASeatAndEntryCounter.release();
+            }
 
             this.checkIfEntryPossible();
 
