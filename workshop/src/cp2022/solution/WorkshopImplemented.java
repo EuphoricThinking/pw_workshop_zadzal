@@ -65,9 +65,9 @@ public class WorkshopImplemented implements Workshop {
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse = new ConcurrentHashMap<>();
 
     private final ConcurrentHashMap<WorkplaceId, HashSet<Long>> whoWaits_TOWARD_Workplace = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new ConcurrentHashMap<>();
+    // private final ConcurrentHashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, Semaphore> usersSemaphoresForSwitchTo = new ConcurrentHashMap<>();
-
+    private final HashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new HashMap<>();
 
 
     private void createAvailableWorkplaceHashmap(Collection<Workplace> workplaces) {
@@ -92,8 +92,12 @@ public class WorkshopImplemented implements Workshop {
 
     private void initializeWorkplaceData(Collection<Workplace> workplaces) {
         for (Workplace place: workplaces) {
-            isAvailableToSeatAt.putIfAbsent(place.getId(), true);
-            isAvailableToUse.putIfAbsent(place.getId(), true);
+            WorkplaceId id = place.getId();
+            isAvailableToSeatAt.putIfAbsent(id, true);
+            isAvailableToUse.putIfAbsent(id, true);
+
+            whoWaits_TOWARD_Workplace.putIfAbsent(id, new HashSet<>());
+            whoLeaves_FROM_Workplace.putIfAbsent(id, null);
         }
     }
 
@@ -230,6 +234,7 @@ public class WorkshopImplemented implements Workshop {
             mutexWaitForASeatAndEntryCounter.acquire();
 
             entryCounter.put(currentThreadId, maxEntries);
+            usersSemaphoresForSwitchTo.put(currentThreadId, new Semaphore(0));
 
             Iterator<Long> firstElement = entryCounter.keySet().iterator();
           //System.out.println(Thread.currentThread().getName() + " ENTRY");
@@ -416,6 +421,7 @@ public class WorkshopImplemented implements Workshop {
 
             actualWorkplace.remove(currentThreadId);
             previousWorkplace.remove(currentThreadId);
+            usersSemaphoresForSwitchTo.remove(currentThreadId);
           //System.out.println("Removed id");
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
