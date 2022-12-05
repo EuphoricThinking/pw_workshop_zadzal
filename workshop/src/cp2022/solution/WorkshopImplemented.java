@@ -278,8 +278,8 @@ public class WorkshopImplemented implements Workshop {
             Iterator<Long> firstElement = entryCounter.keySet().iterator();
           //System.out.println(Thread.currentThread().getName() + " ENTRY");
             // TODO firstElement.hasNext() seems to be unnecessary - remove
-            if ((firstElement.hasNext() && entryCounter.get(firstElement.next()) == 0) // TODO removed ! befpre firstElement has next, but that seems to be withut difference
-                || !isAvailableToSeatAt.get(wid)) {
+            // TODO removed ! befpre firstElement has next, but that seems to be withut difference
+            if (entryCounter.get(firstElement.next()) == 0 || !isAvailableToSeatAt.get(wid)) {
               //System.out.println(Thread.currentThread().getName() + " No entries");
                     Semaphore meWaitingForEntry = new Semaphore(0);
                     waitForEntry.put(currentThreadId, meWaitingForEntry);
