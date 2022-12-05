@@ -398,7 +398,8 @@ public class WorkshopImplemented implements Workshop {
                     }
                     else { // Inside the cycle
                         // Remove from who waits towards as in case of empty place
-
+                        Long whoLeavesFromNextInCycle = whoLeaves_FROM_Workplace.get(wid);
+                        
                     }
                 }
             }
