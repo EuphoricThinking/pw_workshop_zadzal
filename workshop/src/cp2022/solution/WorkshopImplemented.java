@@ -69,7 +69,7 @@ public class WorkshopImplemented implements Workshop {
     private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse = new ConcurrentHashMap<>();
 
-    private final ConcurrentHashMap<WorkplaceId, HashSet<Long>> whoWaits_TOWARD_Workplace = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<WorkplaceId, LinkedHashSet<Long>> whoWaits_TOWARD_Workplace = new ConcurrentHashMap<>();
     // private final ConcurrentHashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, Semaphore> usersSemaphoresForSwitchTo = new ConcurrentHashMap<>();
     private final HashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new HashMap<>();
@@ -347,58 +347,46 @@ public class WorkshopImplemented implements Workshop {
             previousWorkplace.replace(currentThreadId, myActualWorkplace);
             actualWorkplace.replace(currentThreadId, wid);
 
-            whoLeaves_FROM_Workplace.put(myActualWorkplace, currentThreadId);
-            leavingEdges.put(myActualWorkplace, wid);
+            // TODO replace
+//            whoLeaves_FROM_Workplace.put(myActualWorkplace, currentThreadId);
+//            leavingEdges.replace(myActualWorkplace, wid);
 
             // wid is an ID of the workplace I'm going to change to
             // I have NOT changed that workplace yet
             if (myActualWorkplace != wid) { // TODO changed from my previous workplace
-                // System.out.println(Thread.currentThread().getName() + " differs");
+                // Empty workplace
+                if (isAvailableToSeatAt.get(wid)) {
+                    isAvailableToSeatAt.replace(wid, false);
+                    leavingEdges.replace(myActualWorkplace, null); // TODO zaktualizuj podczas wychodzenia
+                    whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
 
-                // Updates information about my previous workplace
+                    // Let in anyone who waits for my actual workplace
+                    LinkedHashSet<Long> waitsForMyPlace = whoWaits_TOWARD_Workplace.get(myActualWorkplace);
+                    Iterator<Long> iterateOverMyPlace = waitsForMyPlace.iterator();
+                    if (iterateOverMyPlace.hasNext()) {
+                        Long headId = iterateOverMyPlace.next();
+                        Semaphore headSemaphore = usersSemaphoresForSwitchTo.get(headId);
+                        iterateOverMyPlace.remove();
 
-                // If another user wants to visit my previous workplace
-//                boolean areUsersWaitingForPrevious = howManyWaitForASeat.get(myActualWorkplace) > 0;
-                if (howManyWaitForASeat.get(myActualWorkplace) > 0) {
-                    // tagged as occupied
-                    //System.out.println(Thread.currentThread().getName() + " discovers, that his previous " + myActualWorkplace + " is awaited");
-                    Semaphore previousWorkplace = waitForSeat.get(myActualWorkplace);
-                    howManyWaitForASeat.compute(myActualWorkplace, (key, val) -> --val);
-                    previousWorkplace.release(); // It will be released in B part, from where it does not need sensitive local variables
-                    //System.out.println(Thread.currentThread().getName() + " released " + myActualWorkplace);
-//                if (areUsersWaitingForPrevious) {
-                    // The workplace is tagged as occupied
-//                    howManyWaitForASeat.compute(myActualWorkplace, (key, val) -> --val);
-                } else {
-                    isAvailableToSeatAt.replace(myActualWorkplace, true);
-                }
+                        headSemaphore.release();
+                    }
+                    else {
+                        isAvailableToSeatAt.replace(myActualWorkplace, true);
 
-                /* B */
-                if (!isAvailableToSeatAt.get(wid)) {
-                    howManyWaitForASeat.compute(wid, (key, val) -> ++val); // TODO does it work?
-                    Semaphore myDemandedSeatSemaphore = waitForSeat.get(wid);
-                    mutexWaitForASeatAndEntryCounter.release();
-
-                  //System.out.println(Thread.currentThread().getName() + "Trying to SEAT SWITCH " + wid + " waits for s");
-                    myDemandedSeatSemaphore.acquire();
-                  //System.out.println(Thread.currentThread().getName() + "\t\tawoke");
-
-                    // Only one thread will be released and only this one will change that value.
-                    // Concurrent access is safe for ConcurrentHashMap
-                    // howManyWaitForASeat.compute(wid, (key, val) -> --val); // TODO is it safe?
+                        mutexWaitForASeatAndEntryCounter.release();
+                    }
                 }
                 else {
-                    // Now the user is going to seat at and then perform use()
-                    isAvailableToSeatAt.replace(wid, false);
+                    whoLeaves_FROM_Workplace.put(myActualWorkplace, currentThreadId);
+                    leavingEdges.replace(myActualWorkplace, wid);
 
-                    mutexWaitForASeatAndEntryCounter.release();
+                    // An added edge to wid enables precise location inside, outside a cycle
+                    int cycleTest = checkCycle(myActualWorkplace);
+
+                    if (cycleTest == noCycle) {
+                        whoWaits_TOWARD_Workplace.get()
+                    }
                 }
-
-                // Unique threads will change values at their associated keys,
-                // therefore in ConcurrentHashMap concurrent access is thread-safe
-                // TODO moved above
-//                previousWorkplace.replace(currentThreadId, myActualWorkplace);
-//                actualWorkplace.replace(currentThreadId, wid);
             }
             else {
               //System.out.println("same");
