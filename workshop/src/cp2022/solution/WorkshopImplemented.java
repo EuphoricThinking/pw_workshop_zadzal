@@ -19,7 +19,7 @@ public class WorkshopImplemented implements Workshop {
     // Read-only map of wrapped workplaces
     private final ConcurrentHashMap<WorkplaceId, WorkplaceWrapper> availableWorkplaces = new ConcurrentHashMap<>();
     // Counter of possible number of entries to satisfy 2*N rule: <ThreadId, leftEntries>
-    // TODOD serves as a queue
+    // serves as a queue
     private final LinkedHashMap<Long, Long> entryCounter = new LinkedHashMap<>();
 
     /* Every entry is changed only by a single thread, whose id is the key in a map */
@@ -44,11 +44,8 @@ public class WorkshopImplemented implements Workshop {
     // Entry semaphores
     private final LinkedHashMap<Long, Semaphore> waitForEntry = new LinkedHashMap<>();
 
-    private final Semaphore mutexWaitForSeat = new Semaphore(1);
-    private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitForASeatAndEntry = new ConcurrentHashMap<>();
     // For switchTo()
     private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitForASeat = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<WorkplaceId, Semaphore> waitForSeat = new ConcurrentHashMap<>();
 
     /* Synchronization of the permission to use (call use()) the given workplace */
     private final ConcurrentHashMap<WorkplaceId, Semaphore> mutexWaitToUse = new ConcurrentHashMap<>();
@@ -96,7 +93,6 @@ public class WorkshopImplemented implements Workshop {
     private void initializationOfSemaphoreMaps(Collection<Workplace> workplaces) {
         for (Workplace place: workplaces) {
             WorkplaceId placeId = place.getId();
-            waitForSeat.putIfAbsent(placeId, new Semaphore(0, true));
             waitToUse.putIfAbsent(placeId, new Semaphore(0, true));
 
             howManyWaitForASeat.putIfAbsent(placeId, 0L);
