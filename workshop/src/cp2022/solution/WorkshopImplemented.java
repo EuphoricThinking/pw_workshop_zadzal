@@ -102,7 +102,7 @@ public class WorkshopImplemented implements Workshop {
             isAvailableToSeatAt.putIfAbsent(id, true);
             isAvailableToUse.putIfAbsent(id, true);
 
-            whoWaits_TOWARD_Workplace.putIfAbsent(id, new HashSet<>());
+            whoWaits_TOWARD_Workplace.putIfAbsent(id, new LinkedHashSet<>());
             whoLeaves_FROM_Workplace.putIfAbsent(id, null);
             leavingEdges.putIfAbsent(id, null);
         }
@@ -383,8 +383,22 @@ public class WorkshopImplemented implements Workshop {
                     // An added edge to wid enables precise location inside, outside a cycle
                     int cycleTest = checkCycle(myActualWorkplace);
 
-                    if (cycleTest == noCycle) {
-                        whoWaits_TOWARD_Workplace.get()
+                    if (cycleTest == noCycle || cycleTest == outsideCycle) { // both cases //TODO does it work?
+                        whoWaits_TOWARD_Workplace.get(wid).add(currentThreadId);
+                        mutexWaitForASeatAndEntryCounter.release();
+
+                        usersSemaphoresForSwitchTo.get(currentThreadId).acquire();
+
+                        // Who waits towards should be removed in the waking thread
+                        leavingEdges.replace(myActualWorkplace, null);
+                        // I get the seat which has been occupied, no need to change isAvailableToSit
+                        whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
+
+                        mutexWaitForASeatAndEntryCounter.release();
+                    }
+                    else { // Inside the cycle
+                        // Remove from who waits towards as in case of empty place
+
                     }
                 }
             }
