@@ -21,10 +21,8 @@ public final class WorkshopFactory {
             Collection<Workplace> workplaces
     ) {
 
-        // FIXME: implement
         return new WorkshopImplemented(workplaces);
 
-       // throw new RuntimeException("not implemented");
     }
     
 }
