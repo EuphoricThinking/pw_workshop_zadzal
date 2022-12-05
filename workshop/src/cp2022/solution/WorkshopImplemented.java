@@ -341,6 +341,17 @@ public class WorkshopImplemented implements Workshop {
         }
     }
 
+    private void cyclicWakeupWithoutMutexRelease(WorkplaceId myActualWorkplace, WorkplaceId wid) {
+        whoLeaves_FROM_Workplace.put(myActualWorkplace, null); // I will make the move
+        leavingEdges.replace(myActualWorkplace, null);
+
+        // Remove from who waits towards as if in case of  an empty place
+        Long whoLeavesFromNextInCycle = whoLeaves_FROM_Workplace.get(wid);
+        isWakeupCyclic.replace(whoLeavesFromNextInCycle, true);
+
+        usersSemaphoresForSwitchTo.get(whoLeavesFromNextInCycle).release();
+    }
+
     @Override
     public Workplace switchTo(WorkplaceId wid) {
       //System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid + " seat: " + isAvailableToSeatAt.get(wid));
@@ -413,23 +424,14 @@ public class WorkshopImplemented implements Workshop {
                         }
                         // wid is the next one - probably the beginning of the cycle
                         else if (leavingEdges.get(wid) != null) {
-                            isWakeupCyclic.replace(whoLeaves_FROM_Workplace.get(wid), true);
-
-                            leavingEdges.replace(myActualWorkplace, null); // TODO zaktualizuj podczas wychodzenia
-                            whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
-
-
+                            cyclicWakeupWithoutMutexRelease(myActualWorkplace, wid);
+                        }
+                        else { // The cycle has ended
+                            mutexWaitForASeatAndEntryCounter.release();
                         }
                     }
                     else { // Inside the cycle
-                        whoLeaves_FROM_Workplace.put(myActualWorkplace, null); // I will make the move
-                        leavingEdges.replace(myActualWorkplace, null);
-
-                        // Remove from who waits towards as in case of empty place
-                        Long whoLeavesFromNextInCycle = whoLeaves_FROM_Workplace.get(wid);
-                        isWakeupCyclic.replace(whoLeavesFromNextInCycle, true);
-
-                        usersSemaphoresForSwitchTo.get(whoLeavesFromNextInCycle).release();
+                        cyclicWakeupWithoutMutexRelease(myActualWorkplace, wid);
                     }
                 }
             }
