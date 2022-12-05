@@ -347,6 +347,9 @@ public class WorkshopImplemented implements Workshop {
             previousWorkplace.replace(currentThreadId, myActualWorkplace);
             actualWorkplace.replace(currentThreadId, wid);
 
+            whoLeaves_FROM_Workplace.put(myActualWorkplace, currentThreadId);
+            leavingEdges.put(myActualWorkplace, wid);
+
             // wid is an ID of the workplace I'm going to change to
             // I have NOT changed that workplace yet
             if (myActualWorkplace != wid) { // TODO changed from my previous workplace
