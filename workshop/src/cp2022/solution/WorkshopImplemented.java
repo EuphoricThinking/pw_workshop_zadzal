@@ -393,6 +393,7 @@ public class WorkshopImplemented implements Workshop {
                         leavingEdges.replace(myActualWorkplace, null);
                         // I get the seat which has been occupied, no need to change isAvailableToSit
                         whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
+                        whoWaits_TOWARD_Workplace.get(wid).remove(currentThreadId); // TODO moved here
 
                         mutexWaitForASeatAndEntryCounter.release();
                     }
@@ -400,11 +401,15 @@ public class WorkshopImplemented implements Workshop {
                         // Remove from who waits towards as in case of empty place
                         Long whoLeavesFromNextInCycle = whoLeaves_FROM_Workplace.get(wid);
 
+                        usersSemaphoresForSwitchTo.get(whoLeavesFromNextInCycle).release();
                     }
                 }
             }
             else {
               //System.out.println("same");
+                leavingEdges.replace(myActualWorkplace, myActualWorkplace); // TODO zaktualizuj podczas wychodzenia
+                whoLeaves_FROM_Workplace.replace(myActualWorkplace, currentThreadId);
+
                 mutexWaitForASeatAndEntryCounter.release();
               //System.out.println("same released");
             }
