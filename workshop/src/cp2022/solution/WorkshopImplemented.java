@@ -320,8 +320,8 @@ public class WorkshopImplemented implements Workshop {
 
     // Waken up with shared mutex, going to release users waiting for its seat
     private void chainWakeupNotCyclic(WorkplaceId myActualWorkplace) {
-        leavingEdges.replace(myActualWorkplace, null); // TODO zaktualizuj podczas wychodzenia
-        whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
+//        leavingEdges.replace(myActualWorkplace, null); // TODO zaktualizuj podczas wychodzenia
+//        whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
 
         // Let in anyone who waits for my actual workplace
         LinkedHashSet<Long> waitsForMyPlace = whoWaits_TOWARD_Workplace.get(myActualWorkplace);
@@ -341,9 +341,9 @@ public class WorkshopImplemented implements Workshop {
         }
     }
 
-    private void cyclicWakeupWithoutMutexRelease(WorkplaceId myActualWorkplace, WorkplaceId wid) {
-        whoLeaves_FROM_Workplace.put(myActualWorkplace, null); // I will make the move
-        leavingEdges.replace(myActualWorkplace, null);
+    private void cyclicWakeupWithoutMutexRelease(WorkplaceId wid) {
+//        whoLeaves_FROM_Workplace.put(myActualWorkplace, null); // I will make the move
+//        leavingEdges.replace(myActualWorkplace, null);
 
         // Remove from who waits towards as if in case of  an empty place
         Long whoLeavesFromNextInCycle = whoLeaves_FROM_Workplace.get(wid);
@@ -394,16 +394,19 @@ public class WorkshopImplemented implements Workshop {
                 if (isAvailableToSeatAt.get(wid)) {
                     isAvailableToSeatAt.replace(wid, false);
 
+                    leavingEdges.replace(myActualWorkplace, null); // TODO zaktualizuj podczas wychodzenia
+                    whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
+
                     chainWakeupNotCyclic(myActualWorkplace);
                 }
                 else {
-                    whoLeaves_FROM_Workplace.put(myActualWorkplace, currentThreadId);
-                    leavingEdges.replace(myActualWorkplace, wid);
-
                     // An added edge to wid enables precise location inside, outside a cycle
                     int cycleTest = checkCycle(myActualWorkplace);
 
                     if (cycleTest == noCycle || cycleTest == outsideCycle) { // both cases //TODO does it work?
+                        whoLeaves_FROM_Workplace.put(myActualWorkplace, currentThreadId);
+                        leavingEdges.replace(myActualWorkplace, wid);
+
                         whoWaits_TOWARD_Workplace.get(wid).add(currentThreadId);
                         mutexWaitForASeatAndEntryCounter.release();
 
@@ -419,19 +422,25 @@ public class WorkshopImplemented implements Workshop {
 
                         whoWaits_TOWARD_Workplace.get(wid).remove(currentThreadId);
 
+                        whoLeaves_FROM_Workplace.put(myActualWorkplace, null); // I will make the move
+                        leavingEdges.replace(myActualWorkplace, null);
+
                         if (!isWakeupCyclic.get(currentThreadId)) {
                             chainWakeupNotCyclic(myActualWorkplace);
                         }
-                        // wid is the next one - probably the beginning of the cycle
+                        // wid is the next one - may be the beginning of the cycle, indicated as null
                         else if (leavingEdges.get(wid) != null) {
-                            cyclicWakeupWithoutMutexRelease(myActualWorkplace, wid);
+                            cyclicWakeupWithoutMutexRelease(wid);
                         }
-                        else { // The cycle has ended
+                        else { // The cycle has ended - found null
                             mutexWaitForASeatAndEntryCounter.release();
                         }
                     }
                     else { // Inside the cycle
-                        cyclicWakeupWithoutMutexRelease(myActualWorkplace, wid);
+                        whoLeaves_FROM_Workplace.put(myActualWorkplace, null); // I will make the move
+                        leavingEdges.replace(myActualWorkplace, null);
+
+                        cyclicWakeupWithoutMutexRelease(wid);
                     }
                 }
             }
