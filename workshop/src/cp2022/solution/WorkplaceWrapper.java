@@ -110,7 +110,7 @@ public class WorkplaceWrapper extends Workplace {
             WorkplaceId myPreviousWorkplace = previousWorkplace.get(currentThreadId);
             WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
 
-          System.out.println(Thread.currentThread().getName() + " wants to \t\t\tuse " + myActualWorkplace);
+        //System.out.println(Thread.currentThread().getName() + " wants to \t\t\tuse " + myActualWorkplace);
 
             mutexWaitForASeatAndEntryCounter.acquire();
 
@@ -144,7 +144,7 @@ public class WorkplaceWrapper extends Workplace {
                 mutexMyActualWorkplace.acquire();
 
                 if (!isAvailableToUse.get(myActualWorkplace)) {
-                    System.out.println(Thread.currentThread().getName() + " waits to use " + myActualWorkplace); //+ " waits for me: " + howManyWaitForASeat.get(myPreviousWorkplace));
+                  //System.out.println(Thread.currentThread().getName() + " waits to use " + myActualWorkplace); //+ " waits for me: " + howManyWaitForASeat.get(myPreviousWorkplace));
                     howManyWaitToUse.compute(myActualWorkplace, (key, val) -> ++val);
                     Semaphore waitForActual = waitToUse.get(myActualWorkplace);
                     mutexMyActualWorkplace.release();
@@ -161,7 +161,7 @@ public class WorkplaceWrapper extends Workplace {
 /************************/
             // System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE");
             originalWorkplace.use();
-            System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE " + myActualWorkplace);
+          //System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE " + myActualWorkplace);
       /********************/
 
             // post use

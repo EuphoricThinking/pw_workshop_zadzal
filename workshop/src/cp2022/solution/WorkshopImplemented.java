@@ -64,6 +64,10 @@ public class WorkshopImplemented implements Workshop {
     private final ConcurrentHashMap<WorkplaceId, Long> howManyWaitToUse = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<WorkplaceId, Semaphore> waitToUse = new ConcurrentHashMap<>();
 
+    private final ConcurrentHashMap<WorkplaceId, HashSet<Long>> whoWaits_TOWARD_Workplace = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, Semaphore> usersSemaphoresForSwitchTo = new ConcurrentHashMap<>();
+
 
 
     private void createAvailableWorkplaceHashmap(Collection<Workplace> workplaces) {
@@ -273,7 +277,7 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
-        System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid + " seat: " + isAvailableToSeatAt.get(wid));
+      //System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid + " seat: " + isAvailableToSeatAt.get(wid));
         try {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexWaitForASeatAndEntryCounter.acquire();
@@ -331,9 +335,9 @@ public class WorkshopImplemented implements Workshop {
                     Semaphore myDemandedSeatSemaphore = waitForSeat.get(wid);
                     mutexWaitForASeatAndEntryCounter.release();
 
-                    System.out.println(Thread.currentThread().getName() + "Trying to SEAT SWITCH " + wid + " waits for s");
+                  //System.out.println(Thread.currentThread().getName() + "Trying to SEAT SWITCH " + wid + " waits for s");
                     myDemandedSeatSemaphore.acquire();
-                    System.out.println(Thread.currentThread().getName() + "\t\tawoke");
+                  //System.out.println(Thread.currentThread().getName() + "\t\tawoke");
 
                     // Only one thread will be released and only this one will change that value.
                     // Concurrent access is safe for ConcurrentHashMap
