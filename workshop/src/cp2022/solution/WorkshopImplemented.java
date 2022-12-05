@@ -74,7 +74,7 @@ public class WorkshopImplemented implements Workshop {
     private final ConcurrentHashMap<Long, Semaphore> usersSemaphoresForSwitchTo = new ConcurrentHashMap<>();
     private final HashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new HashMap<>();
     private final HashMap<WorkplaceId, WorkplaceId> leavingEdges = new HashMap<>();
-    private final HashMap<Long, Boolean> checkIfCyclicWakeup = new HashMap<>();
+    private final HashMap<Long, Boolean> isWakeupCyclic = new HashMap<>();
 
 
     private void createAvailableWorkplaceHashmap(Collection<Workplace> workplaces) {
@@ -272,7 +272,7 @@ public class WorkshopImplemented implements Workshop {
 
             entryCounter.put(currentThreadId, maxEntries);
             usersSemaphoresForSwitchTo.put(currentThreadId, new Semaphore(0));
-            checkIfCyclicWakeup.put(currentThreadId, false);
+            isWakeupCyclic.put(currentThreadId, false);
 
             Iterator<Long> firstElement = entryCounter.keySet().iterator();
           //System.out.println(Thread.currentThread().getName() + " ENTRY");
@@ -328,7 +328,7 @@ public class WorkshopImplemented implements Workshop {
         Iterator<Long> iterateOverMyPlace = waitsForMyPlace.iterator();
         if (iterateOverMyPlace.hasNext()) {
             Long headId = iterateOverMyPlace.next();
-            checkIfCyclicWakeup.replace(headId, false);
+            isWakeupCyclic.replace(headId, false);
             Semaphore headSemaphore = usersSemaphoresForSwitchTo.get(headId);
             // iterateOverMyPlace.remove(); // TODO moved
 
@@ -405,11 +405,29 @@ public class WorkshopImplemented implements Workshop {
 //                        whoWaits_TOWARD_Workplace.get(wid).remove(currentThreadId); // TODO moved here
 //
 //                        mutexWaitForASeatAndEntryCounter.release();
-                        chainWakeupNotCyclic(myActualWorkplace);
+
+                        whoWaits_TOWARD_Workplace.get(wid).remove(currentThreadId);
+
+                        if (!isWakeupCyclic.get(currentThreadId)) {
+                            chainWakeupNotCyclic(myActualWorkplace);
+                        }
+                        // wid is the next one - probably the beginning of the cycle
+                        else if (leavingEdges.get(wid) != null) {
+                            isWakeupCyclic.replace(whoLeaves_FROM_Workplace.get(wid), true);
+
+                            leavingEdges.replace(myActualWorkplace, null); // TODO zaktualizuj podczas wychodzenia
+                            whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
+
+
+                        }
                     }
                     else { // Inside the cycle
+                        whoLeaves_FROM_Workplace.put(myActualWorkplace, null); // I will make the move
+                        leavingEdges.replace(myActualWorkplace, null);
+
                         // Remove from who waits towards as in case of empty place
                         Long whoLeavesFromNextInCycle = whoLeaves_FROM_Workplace.get(wid);
+                        isWakeupCyclic.replace(whoLeavesFromNextInCycle, true);
 
                         usersSemaphoresForSwitchTo.get(whoLeavesFromNextInCycle).release();
                     }
@@ -487,6 +505,7 @@ public class WorkshopImplemented implements Workshop {
             actualWorkplace.remove(currentThreadId);
             previousWorkplace.remove(currentThreadId);
             usersSemaphoresForSwitchTo.remove(currentThreadId);
+            isWakeupCyclic.remove(currentThreadId);
           //System.out.println("Removed id");
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
