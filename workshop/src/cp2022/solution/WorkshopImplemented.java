@@ -400,12 +400,12 @@ public class WorkshopImplemented implements Workshop {
                     chainWakeupNotCyclic(myActualWorkplace);
                 }
                 else {
+                    whoLeaves_FROM_Workplace.put(myActualWorkplace, currentThreadId);
+                    leavingEdges.replace(myActualWorkplace, wid);
                     // An added edge to wid enables precise location inside, outside a cycle
                     int cycleTest = checkCycle(myActualWorkplace);
 
                     if (cycleTest == noCycle || cycleTest == outsideCycle) { // both cases //TODO does it work?
-                        whoLeaves_FROM_Workplace.put(myActualWorkplace, currentThreadId);
-                        leavingEdges.replace(myActualWorkplace, wid);
 
                         whoWaits_TOWARD_Workplace.get(wid).add(currentThreadId);
                         mutexWaitForASeatAndEntryCounter.release();
