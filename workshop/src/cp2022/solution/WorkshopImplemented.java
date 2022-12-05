@@ -11,6 +11,11 @@ import java.util.concurrent.Semaphore;
 public class WorkshopImplemented implements Workshop {
     // Number of available entries
     private final long maxEntries;
+
+    private final int noCycle = 0;
+    private final int insideCycle = 1;
+    private final int outsideCycle = 2;
+
     // Read-only map of wrapped workplaces
     private final ConcurrentHashMap<WorkplaceId, WorkplaceWrapper> availableWorkplaces = new ConcurrentHashMap<>();
     // Counter of possible number of entries to satisfy 2*N rule: <ThreadId, leftEntries>
@@ -68,6 +73,7 @@ public class WorkshopImplemented implements Workshop {
     // private final ConcurrentHashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, Semaphore> usersSemaphoresForSwitchTo = new ConcurrentHashMap<>();
     private final HashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new HashMap<>();
+    private final HashMap<WorkplaceId, WorkplaceId> leavingEdges = new HashMap<>();
 
 
     private void createAvailableWorkplaceHashmap(Collection<Workplace> workplaces) {
@@ -98,6 +104,7 @@ public class WorkshopImplemented implements Workshop {
 
             whoWaits_TOWARD_Workplace.putIfAbsent(id, new HashSet<>());
             whoLeaves_FROM_Workplace.putIfAbsent(id, null);
+            leavingEdges.putIfAbsent(id, null);
         }
     }
 
@@ -219,6 +226,35 @@ public class WorkshopImplemented implements Workshop {
             }
         } catch (InterruptedException e) {
             throw new RuntimeException("panic: unexpected thread interruption");
+        }
+    }
+
+    private int checkCycle(WorkplaceId actualId) {
+        WorkplaceId tortoise = actualId;
+        WorkplaceId hare = leavingEdges.get(leavingEdges.get(actualId));
+
+        while (tortoise != null && hare != null && tortoise != hare) {
+            tortoise = leavingEdges.get(tortoise);
+            hare = leavingEdges.get(leavingEdges.get(hare));
+        }
+
+        if (tortoise == null || hare == null) {
+            return noCycle;
+        }
+        else {
+            // tortoise == hare
+            hare = leavingEdges.get(hare);
+
+            while (hare != tortoise && hare != actualId) {
+                hare = leavingEdges.get(hare);
+            }
+
+            if (hare == actualId) {
+                return insideCycle;
+            }
+            else {
+                return outsideCycle;
+            }
         }
     }
 
