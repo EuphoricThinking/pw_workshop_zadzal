@@ -354,7 +354,7 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
-      //System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid + " seat: " + isAvailableToSeatAt.get(wid));
+      System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid + " seat: " + isAvailableToSeatAt.get(wid));
         try {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexWaitForASeatAndEntryCounter.acquire();
@@ -404,6 +404,7 @@ public class WorkshopImplemented implements Workshop {
                     leavingEdges.replace(myActualWorkplace, wid);
                     // An added edge to wid enables precise location inside, outside a cycle
                     int cycleTest = checkCycle(myActualWorkplace);
+                    System.out.println(Thread.currentThread().getName() + " nocycle: " + (noCycle == cycleTest) + " | outsideCycle: " + (outsideCycle == cycleTest) + " | inside cycle: " + (insideCycle == cycleTest));
 
                     if (cycleTest == noCycle || cycleTest == outsideCycle) { // both cases //TODO does it work?
 
@@ -426,17 +427,21 @@ public class WorkshopImplemented implements Workshop {
                         leavingEdges.replace(myActualWorkplace, null);
 
                         if (!isWakeupCyclic.get(currentThreadId)) {
+                            System.out.println(Thread.currentThread().getName() + " chain wakeup " + myActualWorkplace);
                             chainWakeupNotCyclic(myActualWorkplace);
                         }
                         // wid is the next one - may be the beginning of the cycle, indicated as null
                         else if (leavingEdges.get(wid) != null) {
+                            System.out.println(Thread.currentThread().getName() + " cyclic wakeup " + myActualWorkplace);
                             cyclicWakeupWithoutMutexRelease(wid);
                         }
                         else { // The cycle has ended - found null
+                            System.out.println(Thread.currentThread().getName() + " end of cyclic " + myActualWorkplace + " -> " + wid);
                             mutexWaitForASeatAndEntryCounter.release();
                         }
                     }
                     else { // Inside the cycle
+                        System.out.println(Thread.currentThread().getName() + " cycle start " + myActualWorkplace);
                         whoLeaves_FROM_Workplace.put(myActualWorkplace, null); // I will make the move
                         leavingEdges.replace(myActualWorkplace, null);
 
@@ -468,7 +473,7 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public void leave() {
-        // System.out.println("LEAVING " + Thread.currentThread().getName());
+        System.out.println("LEAVING " + Thread.currentThread().getName());
         // After use from actual workplace
         Long currentThreadId = Thread.currentThread().getId();
         WorkplaceId myActualWorkplace = actualWorkplace.get(currentThreadId);
@@ -496,20 +501,7 @@ public class WorkshopImplemented implements Workshop {
 
           //System.out.println("acquireD entry");
             // Others are allowed for entering
-            LinkedHashSet<Long> waitsForMyPlace = whoWaits_TOWARD_Workplace.get(myActualWorkplace);
-            Iterator<Long> iterateOverMyPlace = waitsForMyPlace.iterator();
-            if (iterateOverMyPlace.hasNext()) {
-                Long headId = iterateOverMyPlace.next();
-                Semaphore headSemaphore = usersSemaphoresForSwitchTo.get(headId);
-                iterateOverMyPlace.remove();
-
-                headSemaphore.release();
-            }
-            else {
-                isAvailableToSeatAt.replace(myActualWorkplace, true);
-
-                mutexWaitForASeatAndEntryCounter.release();
-            }
+            chainWakeupNotCyclic(myActualWorkplace);
 
             this.checkIfEntryPossible();
 
