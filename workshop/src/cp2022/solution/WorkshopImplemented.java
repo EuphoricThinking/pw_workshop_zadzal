@@ -74,6 +74,7 @@ public class WorkshopImplemented implements Workshop {
     private final ConcurrentHashMap<Long, Semaphore> usersSemaphoresForSwitchTo = new ConcurrentHashMap<>();
     private final HashMap<WorkplaceId, Long> whoLeaves_FROM_Workplace = new HashMap<>();
     private final HashMap<WorkplaceId, WorkplaceId> leavingEdges = new HashMap<>();
+    private final HashMap<Long, Boolean> checkIfCyclicWakeup = new HashMap<>();
 
 
     private void createAvailableWorkplaceHashmap(Collection<Workplace> workplaces) {
@@ -271,6 +272,7 @@ public class WorkshopImplemented implements Workshop {
 
             entryCounter.put(currentThreadId, maxEntries);
             usersSemaphoresForSwitchTo.put(currentThreadId, new Semaphore(0));
+            checkIfCyclicWakeup.put(currentThreadId, false);
 
             Iterator<Long> firstElement = entryCounter.keySet().iterator();
           //System.out.println(Thread.currentThread().getName() + " ENTRY");
@@ -326,6 +328,7 @@ public class WorkshopImplemented implements Workshop {
         Iterator<Long> iterateOverMyPlace = waitsForMyPlace.iterator();
         if (iterateOverMyPlace.hasNext()) {
             Long headId = iterateOverMyPlace.next();
+            checkIfCyclicWakeup.replace(headId, false);
             Semaphore headSemaphore = usersSemaphoresForSwitchTo.get(headId);
             // iterateOverMyPlace.remove(); // TODO moved
 
