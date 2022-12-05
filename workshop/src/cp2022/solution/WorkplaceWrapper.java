@@ -115,6 +115,7 @@ public class WorkplaceWrapper extends Workplace {
             mutexWaitForASeatAndEntryCounter.acquire();
 
           // System.out.println(Thread.currentThread().getName() + " use removal");
+            // Task completed - remove 2*N constraint for a given thread
             entryCounter.remove(currentThreadId);  // TODO add removal variable
 
             mutexWaitForASeatAndEntryCounter.release();
