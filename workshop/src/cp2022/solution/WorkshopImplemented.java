@@ -316,6 +316,28 @@ public class WorkshopImplemented implements Workshop {
         }
     }
 
+    // Waken up with shared mutex, going to release users waiting for its seat
+    private void chainWakeupNotCyclic(WorkplaceId myActualWorkplace) {
+        leavingEdges.replace(myActualWorkplace, null); // TODO zaktualizuj podczas wychodzenia
+        whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
+
+        // Let in anyone who waits for my actual workplace
+        LinkedHashSet<Long> waitsForMyPlace = whoWaits_TOWARD_Workplace.get(myActualWorkplace);
+        Iterator<Long> iterateOverMyPlace = waitsForMyPlace.iterator();
+        if (iterateOverMyPlace.hasNext()) {
+            Long headId = iterateOverMyPlace.next();
+            Semaphore headSemaphore = usersSemaphoresForSwitchTo.get(headId);
+            // iterateOverMyPlace.remove(); // TODO moved
+
+            headSemaphore.release();
+        }
+        else {
+            isAvailableToSeatAt.replace(myActualWorkplace, true);
+
+            mutexWaitForASeatAndEntryCounter.release();
+        }
+    }
+
     @Override
     public Workplace switchTo(WorkplaceId wid) {
       //System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid + " seat: " + isAvailableToSeatAt.get(wid));
@@ -357,24 +379,8 @@ public class WorkshopImplemented implements Workshop {
                 // Empty workplace
                 if (isAvailableToSeatAt.get(wid)) {
                     isAvailableToSeatAt.replace(wid, false);
-                    leavingEdges.replace(myActualWorkplace, null); // TODO zaktualizuj podczas wychodzenia
-                    whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
 
-                    // Let in anyone who waits for my actual workplace
-                    LinkedHashSet<Long> waitsForMyPlace = whoWaits_TOWARD_Workplace.get(myActualWorkplace);
-                    Iterator<Long> iterateOverMyPlace = waitsForMyPlace.iterator();
-                    if (iterateOverMyPlace.hasNext()) {
-                        Long headId = iterateOverMyPlace.next();
-                        Semaphore headSemaphore = usersSemaphoresForSwitchTo.get(headId);
-                        // iterateOverMyPlace.remove(); // TODO moved
-
-                        headSemaphore.release();
-                    }
-                    else {
-                        isAvailableToSeatAt.replace(myActualWorkplace, true);
-
-                        mutexWaitForASeatAndEntryCounter.release();
-                    }
+                    chainWakeupNotCyclic(myActualWorkplace);
                 }
                 else {
                     whoLeaves_FROM_Workplace.put(myActualWorkplace, currentThreadId);
@@ -390,12 +396,13 @@ public class WorkshopImplemented implements Workshop {
                         usersSemaphoresForSwitchTo.get(currentThreadId).acquire();
 
                         // Who waits towards should be removed in the waking thread
-                        leavingEdges.replace(myActualWorkplace, null);
-                        // I get the seat which has been occupied, no need to change isAvailableToSit
-                        whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
-                        whoWaits_TOWARD_Workplace.get(wid).remove(currentThreadId); // TODO moved here
-
-                        mutexWaitForASeatAndEntryCounter.release();
+//                        leavingEdges.replace(myActualWorkplace, null);
+//                        // I get the seat which has been occupied, no need to change isAvailableToSit
+//                        whoLeaves_FROM_Workplace.replace(myActualWorkplace, null);
+//                        whoWaits_TOWARD_Workplace.get(wid).remove(currentThreadId); // TODO moved here
+//
+//                        mutexWaitForASeatAndEntryCounter.release();
+                        chainWakeupNotCyclic(myActualWorkplace);
                     }
                     else { // Inside the cycle
                         // Remove from who waits towards as in case of empty place
