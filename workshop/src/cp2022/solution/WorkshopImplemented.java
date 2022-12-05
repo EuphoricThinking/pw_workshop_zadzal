@@ -366,7 +366,7 @@ public class WorkshopImplemented implements Workshop {
                     if (iterateOverMyPlace.hasNext()) {
                         Long headId = iterateOverMyPlace.next();
                         Semaphore headSemaphore = usersSemaphoresForSwitchTo.get(headId);
-                        iterateOverMyPlace.remove();
+                        // iterateOverMyPlace.remove(); // TODO moved
 
                         headSemaphore.release();
                     }
@@ -399,7 +399,7 @@ public class WorkshopImplemented implements Workshop {
                     else { // Inside the cycle
                         // Remove from who waits towards as in case of empty place
                         Long whoLeavesFromNextInCycle = whoLeaves_FROM_Workplace.get(wid);
-                        
+
                     }
                 }
             }
