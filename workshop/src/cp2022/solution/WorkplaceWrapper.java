@@ -161,7 +161,7 @@ public class WorkplaceWrapper extends Workplace {
 /************************/
             // System.out.println(Thread.currentThread().getName() + " Before ORIGINAL USE");
             originalWorkplace.use();
-          System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE " + myActualWorkplace);
+        //System.out.println(Thread.currentThread().getName() + " After ORIGINAL USE " + myActualWorkplace);
       /********************/
 
             // post use
