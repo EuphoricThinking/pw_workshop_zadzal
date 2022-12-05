@@ -179,13 +179,14 @@ public class WorkshopImplemented implements Workshop {
                 if (entryCounter.get((queuedThreadId = counterIterator.next())) == 0) {
                     // Check if the first one wants to enter (queued to enter)
                     // and its seat is available
+                  //System.out.println("First is zero");
                     Semaphore waitingToEnterSingle;
                     if (isAvailableToSeatAt.get(actualWorkplace.get(queuedThreadId))
                             && ((waitingToEnterSingle = waitForEntry.remove(queuedThreadId)) != null)) {
 
                         // Let that thread enter
                         isMutexShared = true;
-                      //System.out.println("freed");
+                    //System.out.println("freed");
 
                         waitingToEnterSingle.release(); // Share mutex
                     }
@@ -211,7 +212,7 @@ public class WorkshopImplemented implements Workshop {
                     if (foundWorkplace) {
                         Semaphore waitingToEnterSingle = waitForEntry.remove(queuedThreadId);
                         isMutexShared = true;
-                      //System.out.println("release");
+                      //System.out.println("FROM later release");
 
                         waitingToEnterSingle.release();
                     }
@@ -264,7 +265,7 @@ public class WorkshopImplemented implements Workshop {
         Long currentThreadId = Thread.currentThread().getId();
         hasJustEntered.put(currentThreadId, true);
         putActualAndPreviousWorkplace(wid, wid);
-        // System.out.println(Thread.currentThread().getName() + " wants to ENTER " + wid);
+      //System.out.println(Thread.currentThread().getName() + " wants to ENTER " + wid);
 
         // Check whether entry is possible
         try {
@@ -276,7 +277,7 @@ public class WorkshopImplemented implements Workshop {
 
             Iterator<Long> firstElement = entryCounter.keySet().iterator();
           //System.out.println(Thread.currentThread().getName() + " ENTRY");
-            if ((!firstElement.hasNext() && entryCounter.get(firstElement.next()) == 0)
+            if ((firstElement.hasNext() && entryCounter.get(firstElement.next()) == 0) // TODO removed ! befpre firstElement has next, but that seems to be withut difference
                 || !isAvailableToSeatAt.get(wid)) {
               //System.out.println(Thread.currentThread().getName() + " No entries");
                     Semaphore meWaitingForEntry = new Semaphore(0);
@@ -308,7 +309,7 @@ public class WorkshopImplemented implements Workshop {
             isAvailableToSeatAt.replace(wid, false);
 
             // entryCounter.remove(currentThreadId); //TODO changed; test iterator.remove
-          //System.out.println(Thread.currentThread().getName() + " ENTERING " + actualWorkplace.get(currentThreadId));
+        //System.out.println(Thread.currentThread().getName() + " \t\tENTERING " + actualWorkplace.get(currentThreadId));
 
             mutexWaitForASeatAndEntryCounter.release();
 
@@ -354,7 +355,7 @@ public class WorkshopImplemented implements Workshop {
 
     @Override
     public Workplace switchTo(WorkplaceId wid) {
-    //System.out.println(Thread.currentThread().getName() + " SWITCHING to " + wid + " seat: " + isAvailableToSeatAt.get(wid));
+  //System.out.println(Thread.currentThread().getName() + " \t\t\t\tSWITCHING to " + wid + " seat: " + isAvailableToSeatAt.get(wid));
         try {
             // System.out.println(Thread.currentThread().getName() + " SWITCH acquire entry");
             mutexWaitForASeatAndEntryCounter.acquire();
